@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Map, MapPin, BarChart3, Plus, Moon, Sun } from "lucide-react";
+import { Map, PlusCircle, BarChart3, Moon, Sun, MapPin } from "lucide-react";
 import { useTheme } from "./theme-provider";
 import { Button } from "./ui/button";
 
@@ -15,7 +15,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <MapPin className="h-6 w-6 text-primary" />
           <h1 className="font-bold text-xl tracking-tight hidden sm:block font-display">Campus Spotter</h1>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -33,24 +33,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       <nav className="h-16 border-t bg-card flex items-center justify-around px-2 sm:px-6 shrink-0 pb-safe">
-        <NavItem href="/" icon={<Map className="h-6 w-6" />} label="Map" active={location === "/"} />
-        
-        <Link href="/log" className="absolute -top-6 left-1/2 -translate-x-1/2">
-          <div className="bg-primary text-primary-foreground rounded-full p-4 shadow-lg hover-elevate hover:scale-105 transition-transform cursor-pointer">
-            <Plus className="h-6 w-6" />
-          </div>
-        </Link>
-        
+        <NavItem href="/map" icon={<Map className="h-6 w-6" />} label="Map" active={location === "/map"} />
+        <NavItem href="/" icon={<PlusCircle className="h-6 w-6" />} label="Add Sighting" active={location === "/"} />
         <NavItem href="/stats" icon={<BarChart3 className="h-6 w-6" />} label="Stats" active={location === "/stats"} />
       </nav>
     </div>
   );
 }
 
-function NavItem({ href, icon, label, active }: { href: string, icon: React.ReactNode, label: string, active: boolean }) {
+function NavItem({ href, icon, label, active }: { href: string; icon: React.ReactNode; label: string; active: boolean }) {
   return (
     <Link href={href}>
-      <div className={`flex flex-col items-center justify-center w-16 gap-1 cursor-pointer transition-colors ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+      <div
+        className={`flex flex-col items-center justify-center w-20 gap-1 cursor-pointer transition-colors ${
+          active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
         {icon}
         <span className="text-[10px] font-medium">{label}</span>
       </div>

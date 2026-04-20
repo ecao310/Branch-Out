@@ -15,8 +15,8 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={MapPage} />
-        <Route path="/log" component={LogPage} />
+        <Route path="/" component={LogPage} />
+        <Route path="/map" component={MapPage} />
         <Route path="/stats" component={StatsPage} />
         <Route component={NotFound} />
       </Switch>

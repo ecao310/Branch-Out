@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -59,12 +59,17 @@ export default function LogPage() {
         });
         setIsLocating(false);
       },
-      (error) => {
+      () => {
         setLocationError("Unable to retrieve your location. Please allow location access.");
         setIsLocating(false);
       }
     );
   };
+
+  // Auto-capture GPS on page load
+  useEffect(() => {
+    getLocation();
+  }, []);
 
   const onSubmit = (data: FormValues) => {
     if (!coords) {
@@ -96,7 +101,7 @@ export default function LogPage() {
           queryClient.invalidateQueries({ queryKey: getGetRecentSightingsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetSightingStatsQueryKey() });
           
-          setLocation("/");
+          setLocation("/map");
         },
         onError: () => {
           toast({
@@ -113,7 +118,7 @@ export default function LogPage() {
     <div className="w-full h-full overflow-y-auto p-4 sm:p-6 lg:p-8 bg-muted/20">
       <div className="max-w-md mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Log Sighting</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Add Sighting</h1>
           <p className="text-muted-foreground mt-2">Spot someone wearing college gear? Log it here!</p>
         </div>
 
@@ -183,7 +188,7 @@ export default function LogPage() {
               />
 
               <div className="space-y-3">
-                <FormLabel>Location</FormLabel>
+                <label className="text-sm font-medium leading-none">Location</label>
                 <div className="flex flex-col gap-2">
                   <Button 
                     type="button" 
@@ -238,7 +243,7 @@ export default function LogPage() {
                 disabled={createSighting.isPending || !coords}
               >
                 {createSighting.isPending ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-                {createSighting.isPending ? "Logging..." : "Log Sighting"}
+                {createSighting.isPending ? "Uploading..." : "Confirm"}
               </Button>
             </form>
           </Form>
