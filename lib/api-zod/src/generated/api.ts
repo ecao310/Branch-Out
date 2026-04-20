@@ -32,6 +32,7 @@ export const ListSightingsResponseItem = zod.object({
   latitude: zod.number().nullish(),
   longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
+  spotterName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListSightingsResponse = zod.array(ListSightingsResponseItem);
@@ -45,6 +46,7 @@ export const CreateSightingBody = zod.object({
   latitude: zod.number().nullish(),
   longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
+  spotterName: zod.string().nullish(),
 });
 
 /**
@@ -67,6 +69,7 @@ export const GetRecentSightingsResponseItem = zod.object({
   latitude: zod.number().nullish(),
   longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
+  spotterName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const GetRecentSightingsResponse = zod.array(
@@ -86,5 +89,6 @@ export const GetSightingResponse = zod.object({
   latitude: zod.number().nullish(),
   longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
+  spotterName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });

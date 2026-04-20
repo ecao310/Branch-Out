@@ -50,6 +50,7 @@ router.post("/sightings", async (req, res): Promise<void> => {
       latitude: parsed.data.latitude ?? null,
       longitude: parsed.data.longitude ?? null,
       notes: parsed.data.notes ?? null,
+      spotterName: parsed.data.spotterName ?? null,
     })
     .returning();
 

@@ -15,6 +15,7 @@ export interface Sighting {
   latitude?: number | null;
   longitude?: number | null;
   notes?: string | null;
+  spotterName?: string | null;
   createdAt: string;
 }
 
@@ -23,6 +24,7 @@ export interface CreateSightingBody {
   latitude?: number | null;
   longitude?: number | null;
   notes?: string | null;
+  spotterName?: string | null;
 }
 
 export interface UniversityStat {

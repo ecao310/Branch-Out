@@ -158,6 +158,9 @@ components:
         notes:
           type: string
           nullable: true
+        spotterName:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -180,6 +183,9 @@ components:
           format: float
           nullable: true
         notes:
+          type: string
+          nullable: true
+        spotterName:
           type: string
           nullable: true
       required:

@@ -92,7 +92,9 @@ export default function StatsPage() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        Spotted <span className="font-bold">{sighting.university}</span>
+                        <span className="font-bold">{sighting.spotterName ?? "Someone"}</span>
+                        {" spotted "}
+                        <span className="font-bold">{sighting.university}</span>
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(sighting.createdAt), { addSuffix: true })}

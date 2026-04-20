@@ -16,7 +16,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
+const SPOTTER_NAME_KEY = "campus-spotter-name";
+
 const formSchema = z.object({
+  spotterName: z.string().optional(),
   university: z.string().min(1, "Please select a university"),
   notes: z.string().optional(),
 });
@@ -30,12 +33,13 @@ export default function LogPage() {
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null);
-  
+
   const createSighting = useCreateSighting();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      spotterName: localStorage.getItem(SPOTTER_NAME_KEY) ?? "",
       university: "",
       notes: "",
     },
@@ -44,7 +48,7 @@ export default function LogPage() {
   const getLocation = () => {
     setIsLocating(true);
     setLocationError(null);
-    
+
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser");
       setIsLocating(false);
@@ -55,7 +59,7 @@ export default function LogPage() {
       (position) => {
         setCoords({
           lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lng: position.coords.longitude,
         });
         setIsLocating(false);
       },
@@ -66,20 +70,27 @@ export default function LogPage() {
     );
   };
 
-  // Auto-capture GPS on page load
   useEffect(() => {
     getLocation();
   }, []);
 
   const onSubmit = (data: FormValues) => {
+    const name = data.spotterName?.trim() || null;
+    if (name) {
+      localStorage.setItem(SPOTTER_NAME_KEY, name);
+    } else {
+      localStorage.removeItem(SPOTTER_NAME_KEY);
+    }
+
     createSighting.mutate(
-      { 
+      {
         data: {
           university: data.university,
           latitude: coords?.lat ?? null,
           longitude: coords?.lng ?? null,
           notes: data.notes || null,
-        }
+          spotterName: name,
+        },
       },
       {
         onSuccess: () => {
@@ -87,20 +98,20 @@ export default function LogPage() {
             title: "Sighting logged!",
             description: `Successfully logged sighting for ${data.university}.`,
           });
-          
+
           queryClient.invalidateQueries({ queryKey: getListSightingsQueryKey({}) });
           queryClient.invalidateQueries({ queryKey: getGetRecentSightingsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetSightingStatsQueryKey() });
-          
+
           setLocation("/map");
         },
         onError: () => {
           toast({
             title: "Failed to log sighting",
             description: "There was an error saving your sighting. Please try again.",
-            variant: "destructive"
+            variant: "destructive",
           });
-        }
+        },
       }
     );
   };
@@ -116,7 +127,24 @@ export default function LogPage() {
         <div className="bg-card border rounded-xl p-6 shadow-sm">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
+
+              <FormField
+                control={form.control}
+                name="spotterName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your Name (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g. Alex"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="university"
@@ -135,9 +163,7 @@ export default function LogPage() {
                             )}
                           >
                             {field.value
-                              ? UNIVERSITIES.find(
-                                  (university) => university === field.value
-                                )
+                              ? UNIVERSITIES.find((u) => u === field.value)
                               : "Select university"}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
@@ -160,9 +186,7 @@ export default function LogPage() {
                                   <Check
                                     className={cn(
                                       "mr-2 h-4 w-4",
-                                      university === field.value
-                                        ? "opacity-100"
-                                        : "opacity-0"
+                                      university === field.value ? "opacity-100" : "opacity-0"
                                     )}
                                   />
                                   {university}
@@ -181,9 +205,9 @@ export default function LogPage() {
               <div className="space-y-3">
                 <label className="text-sm font-medium leading-none">Location</label>
                 <div className="flex flex-col gap-2">
-                  <Button 
-                    type="button" 
-                    variant={coords ? "outline" : "default"} 
+                  <Button
+                    type="button"
+                    variant={coords ? "outline" : "default"}
                     onClick={getLocation}
                     disabled={isLocating}
                     className="w-full flex gap-2 items-center justify-center"
@@ -197,7 +221,7 @@ export default function LogPage() {
                     )}
                     {isLocating ? "Getting location..." : coords ? "Location Acquired" : "Get Current Location"}
                   </Button>
-                  
+
                   {coords && (
                     <p className="text-xs text-muted-foreground text-center">
                       Lat: {coords.lat.toFixed(4)}, Lng: {coords.lng.toFixed(4)}
@@ -216,10 +240,10 @@ export default function LogPage() {
                   <FormItem>
                     <FormLabel>Notes (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="e.g. Saw a Michigan hat at a coffee shop in Tokyo!" 
+                      <Textarea
+                        placeholder="e.g. Saw a Michigan hat at a coffee shop in Tokyo!"
                         className="resize-none"
-                        {...field} 
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -227,9 +251,9 @@ export default function LogPage() {
                 )}
               />
 
-              <Button 
-                type="submit" 
-                className="w-full font-bold" 
+              <Button
+                type="submit"
+                className="w-full font-bold"
                 size="lg"
                 disabled={createSighting.isPending}
               >

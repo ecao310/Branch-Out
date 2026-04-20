@@ -8,6 +8,7 @@ export const sightingsTable = pgTable("sightings", {
   latitude: real("latitude"),
   longitude: real("longitude"),
   notes: text("notes"),
+  spotterName: text("spotter_name"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
