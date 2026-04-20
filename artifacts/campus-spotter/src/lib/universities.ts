@@ -11,5 +11,5 @@ export const UNIVERSITIES = [
   "Rutgers", "South Carolina", "Stanford", "Syracuse", "TCU", "Tennessee",
   "Texas", "Texas A&M", "Texas Tech", "UCLA", "USC", "Utah", "Vanderbilt",
   "Virginia", "Virginia Tech", "Wake Forest", "Washington", "Washington State",
-  "West Virginia", "Wisconsin"
+  "UMass Amherst", "West Virginia", "Wisconsin"
 ];
