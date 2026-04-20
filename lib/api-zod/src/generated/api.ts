@@ -29,8 +29,8 @@ export const ListSightingsQueryParams = zod.object({
 export const ListSightingsResponseItem = zod.object({
   id: zod.number(),
   university: zod.string(),
-  latitude: zod.number(),
-  longitude: zod.number(),
+  latitude: zod.number().nullish(),
+  longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
@@ -42,8 +42,8 @@ export const ListSightingsResponse = zod.array(ListSightingsResponseItem);
  */
 export const CreateSightingBody = zod.object({
   university: zod.string(),
-  latitude: zod.number(),
-  longitude: zod.number(),
+  latitude: zod.number().nullish(),
+  longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
 });
 
@@ -64,8 +64,8 @@ export const GetSightingStatsResponse = zod.array(GetSightingStatsResponseItem);
 export const GetRecentSightingsResponseItem = zod.object({
   id: zod.number(),
   university: zod.string(),
-  latitude: zod.number(),
-  longitude: zod.number(),
+  latitude: zod.number().nullish(),
+  longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
@@ -83,8 +83,8 @@ export const GetSightingParams = zod.object({
 export const GetSightingResponse = zod.object({
   id: zod.number(),
   university: zod.string(),
-  latitude: zod.number(),
-  longitude: zod.number(),
+  latitude: zod.number().nullish(),
+  longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });

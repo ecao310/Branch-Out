@@ -72,21 +72,12 @@ export default function LogPage() {
   }, []);
 
   const onSubmit = (data: FormValues) => {
-    if (!coords) {
-      toast({
-        title: "Location required",
-        description: "Please get your current location first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     createSighting.mutate(
       { 
         data: {
           university: data.university,
-          latitude: coords.lat,
-          longitude: coords.lng,
+          latitude: coords?.lat ?? null,
+          longitude: coords?.lng ?? null,
           notes: data.notes || null,
         }
       },
@@ -240,7 +231,7 @@ export default function LogPage() {
                 type="submit" 
                 className="w-full font-bold" 
                 size="lg"
-                disabled={createSighting.isPending || !coords}
+                disabled={createSighting.isPending}
               >
                 {createSighting.isPending ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                 {createSighting.isPending ? "Uploading..." : "Confirm"}

@@ -5,8 +5,8 @@ import { z } from "zod/v4";
 export const sightingsTable = pgTable("sightings", {
   id: serial("id").primaryKey(),
   university: text("university").notNull(),
-  latitude: real("latitude").notNull(),
-  longitude: real("longitude").notNull(),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

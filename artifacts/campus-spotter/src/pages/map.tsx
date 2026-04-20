@@ -48,6 +48,7 @@ export default function MapPage() {
       : sightings.filter(s => s.university === selectedUni);
 
     filteredSightings.forEach(sighting => {
+      if (sighting.latitude == null || sighting.longitude == null) return;
       const date = new Date(sighting.createdAt).toLocaleDateString();
       const marker = L.marker([sighting.latitude, sighting.longitude])
         .bindPopup(`

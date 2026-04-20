@@ -12,16 +12,16 @@ export interface HealthStatus {
 export interface Sighting {
   id: number;
   university: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   notes?: string | null;
   createdAt: string;
 }
 
 export interface CreateSightingBody {
   university: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   notes?: string | null;
 }
 

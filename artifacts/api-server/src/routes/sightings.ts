@@ -47,8 +47,8 @@ router.post("/sightings", async (req, res): Promise<void> => {
     .insert(sightingsTable)
     .values({
       university: parsed.data.university,
-      latitude: parsed.data.latitude,
-      longitude: parsed.data.longitude,
+      latitude: parsed.data.latitude ?? null,
+      longitude: parsed.data.longitude ?? null,
       notes: parsed.data.notes ?? null,
     })
     .returning();
