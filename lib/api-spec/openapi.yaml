@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Campus Spotter API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: sightings
+    description: University apparel sighting operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,110 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /sightings:
+    get:
+      operationId: listSightings
+      tags: [sightings]
+      summary: List all sightings
+      description: Returns all university apparel sightings
+      parameters:
+        - in: query
+          name: university
+          schema:
+            type: string
+          description: Filter by university name (case-insensitive partial match)
+      responses:
+        "200":
+          description: List of sightings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sighting"
+    post:
+      operationId: createSighting
+      tags: [sightings]
+      summary: Create a new sighting
+      description: Log a new university apparel sighting with GPS coordinates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSightingBody"
+      responses:
+        "201":
+          description: Created sighting
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sighting"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /sightings/stats:
+    get:
+      operationId: getSightingStats
+      tags: [sightings]
+      summary: Get sighting statistics
+      description: Returns aggregated sighting counts per university
+      responses:
+        "200":
+          description: Sighting stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UniversityStat"
+
+  /sightings/recent:
+    get:
+      operationId: getRecentSightings
+      tags: [sightings]
+      summary: Get recent sightings
+      description: Returns the most recent sightings (last 10)
+      responses:
+        "200":
+          description: Recent sightings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sighting"
+
+  /sightings/{id}:
+    get:
+      operationId: getSighting
+      tags: [sightings]
+      summary: Get a specific sighting
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Sighting
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sighting"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +140,66 @@ components:
       required:
         - status
 
+    Sighting:
+      type: object
+      properties:
+        id:
+          type: integer
+        university:
+          type: string
+        latitude:
+          type: number
+          format: float
+        longitude:
+          type: number
+          format: float
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - university
+        - latitude
+        - longitude
+        - createdAt
+
+    CreateSightingBody:
+      type: object
+      properties:
+        university:
+          type: string
+        latitude:
+          type: number
+          format: float
+        longitude:
+          type: number
+          format: float
+        notes:
+          type: string
+          nullable: true
+      required:
+        - university
+        - latitude
+        - longitude
+
+    UniversityStat:
+      type: object
+      properties:
+        university:
+          type: string
+        count:
+          type: integer
+      required:
+        - university
+        - count
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

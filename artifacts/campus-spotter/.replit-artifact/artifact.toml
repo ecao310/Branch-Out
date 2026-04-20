@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Campus Spotter"
+version = "1.0.0"
+id = "artifacts/campus-spotter"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19368
+
+[services.development]
+run = "pnpm --filter @workspace/campus-spotter run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/campus-spotter", "run", "build" ]
+publicDir = "artifacts/campus-spotter/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19368"
+BASE_PATH = "/"
