@@ -20,7 +20,7 @@ export default function MapPage() {
     if (!mapRef.current || mapInstanceRef.current) return;
 
     // Initialize map
-    const map = L.map(mapRef.current).setView([39.5, -98.35], 4);
+    const map = L.map(mapRef.current).setView([37.7749, -122.4194], 12);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
