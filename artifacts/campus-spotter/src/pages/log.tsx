@@ -3,20 +3,34 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCreateSighting, getListSightingsQueryKey, getGetRecentSightingsQueryKey, getGetSightingStatsQueryKey } from "@workspace/api-client-react";
-import { UNIVERSITIES } from "@/lib/universities";
+import { UNIVERSITIES as STATIC_UNIVERSITIES } from "@/lib/universities";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Navigation, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { MapPin, Navigation, Loader2, Check, ChevronsUpDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
 const SPOTTER_NAME_KEY = "campus-spotter-name";
+const UNIVERSITIES_QUERY_KEY = ["universities"];
+
+function useUniversities() {
+  return useQuery<string[]>({
+    queryKey: UNIVERSITIES_QUERY_KEY,
+    queryFn: async () => {
+      const res = await fetch("/api/universities");
+      if (!res.ok) throw new Error("Failed to fetch universities");
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    placeholderData: STATIC_UNIVERSITIES,
+  });
+}
 
 const formSchema = z.object({
   spotterName: z.string().optional(),
@@ -32,8 +46,11 @@ export default function LogPage() {
   const queryClient = useQueryClient();
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [searchValue, setSearchValue] = useState("");
+  const [open, setOpen] = useState(false);
 
+  const { data: universities = STATIC_UNIVERSITIES } = useUniversities();
   const createSighting = useCreateSighting();
 
   const form = useForm<FormValues>({
@@ -57,10 +74,7 @@ export default function LogPage() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setCoords({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
+        setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
         setIsLocating(false);
       },
       () => {
@@ -102,6 +116,7 @@ export default function LogPage() {
           queryClient.invalidateQueries({ queryKey: getListSightingsQueryKey({}) });
           queryClient.invalidateQueries({ queryKey: getGetRecentSightingsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetSightingStatsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: UNIVERSITIES_QUERY_KEY });
 
           setLocation("/map");
         },
@@ -115,6 +130,12 @@ export default function LogPage() {
       }
     );
   };
+
+  const selectedUniversity = form.watch("university");
+  const trimmedSearch = searchValue.trim();
+  const isCustomValue =
+    trimmedSearch.length > 0 &&
+    !universities.some((u) => u.toLowerCase() === trimmedSearch.toLowerCase());
 
   return (
     <div className="w-full h-full overflow-y-auto p-4 sm:p-6 lg:p-8 bg-muted/20">
@@ -135,10 +156,7 @@ export default function LogPage() {
                   <FormItem>
                     <FormLabel>Your Name (Optional)</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="e.g. Alex"
-                        {...field}
-                      />
+                      <Input placeholder="e.g. Alex" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -151,47 +169,80 @@ export default function LogPage() {
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>University</FormLabel>
-                    <Popover>
+                    <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
                             variant="outline"
                             role="combobox"
+                            aria-expanded={open}
                             className={cn(
                               "w-full justify-between",
                               !field.value && "text-muted-foreground"
                             )}
                           >
-                            {field.value
-                              ? UNIVERSITIES.find((u) => u === field.value)
-                              : "Select university"}
+                            {field.value || "Select university"}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
+                      <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
                         <Command>
-                          <CommandInput placeholder="Search university..." />
+                          <CommandInput
+                            placeholder="Search or type a university..."
+                            value={searchValue}
+                            onValueChange={setSearchValue}
+                          />
                           <CommandList>
-                            <CommandEmpty>No university found.</CommandEmpty>
+                            <CommandEmpty>
+                              {trimmedSearch.length > 0 ? (
+                                <button
+                                  type="button"
+                                  className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                  onClick={() => {
+                                    form.setValue("university", trimmedSearch, { shouldValidate: true });
+                                    setSearchValue("");
+                                    setOpen(false);
+                                  }}
+                                >
+                                  Add "<span className="font-semibold">{trimmedSearch}</span>"
+                                </button>
+                              ) : (
+                                <p className="px-4 py-2 text-sm">No university found.</p>
+                              )}
+                            </CommandEmpty>
                             <CommandGroup>
-                              {UNIVERSITIES.map((university) => (
+                              {universities.map((university) => (
                                 <CommandItem
                                   value={university}
                                   key={university}
                                   onSelect={() => {
-                                    form.setValue("university", university);
+                                    form.setValue("university", university, { shouldValidate: true });
+                                    setSearchValue("");
+                                    setOpen(false);
                                   }}
                                 >
                                   <Check
                                     className={cn(
                                       "mr-2 h-4 w-4",
-                                      university === field.value ? "opacity-100" : "opacity-0"
+                                      university === selectedUniversity ? "opacity-100" : "opacity-0"
                                     )}
                                   />
                                   {university}
                                 </CommandItem>
                               ))}
+                              {isCustomValue && (
+                                <CommandItem
+                                  value={`__add__${trimmedSearch}`}
+                                  onSelect={() => {
+                                    form.setValue("university", trimmedSearch, { shouldValidate: true });
+                                    setSearchValue("");
+                                    setOpen(false);
+                                  }}
+                                >
+                                  <span className="text-primary font-medium">Add "{trimmedSearch}"</span>
+                                </CommandItem>
+                              )}
                             </CommandGroup>
                           </CommandList>
                         </Command>
@@ -205,22 +256,39 @@ export default function LogPage() {
               <div className="space-y-3">
                 <label className="text-sm font-medium leading-none">Location</label>
                 <div className="flex flex-col gap-2">
-                  <Button
-                    type="button"
-                    variant={coords ? "outline" : "default"}
-                    onClick={getLocation}
-                    disabled={isLocating}
-                    className="w-full flex gap-2 items-center justify-center"
-                  >
-                    {isLocating ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : coords ? (
-                      <MapPin className="h-4 w-4 text-primary" />
-                    ) : (
-                      <Navigation className="h-4 w-4" />
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      type="button"
+                      variant={coords ? "outline" : "default"}
+                      onClick={getLocation}
+                      disabled={isLocating}
+                      className="flex-1 flex gap-2 items-center justify-center"
+                    >
+                      {isLocating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : coords ? (
+                        <MapPin className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Navigation className="h-4 w-4" />
+                      )}
+                      {isLocating ? "Getting location..." : coords ? "Location Acquired" : "Get Current Location"}
+                    </Button>
+                    {coords && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => {
+                          setCoords(null);
+                          setLocationError(null);
+                        }}
+                        aria-label="Remove location"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     )}
-                    {isLocating ? "Getting location..." : coords ? "Location Acquired" : "Get Current Location"}
-                  </Button>
+                  </div>
 
                   {coords && (
                     <p className="text-xs text-muted-foreground text-center">
