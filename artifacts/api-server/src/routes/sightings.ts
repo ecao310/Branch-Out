@@ -109,6 +109,21 @@ router.get("/sightings/recent", async (_req, res): Promise<void> => {
   res.json(GetRecentSightingsResponse.parse(rows));
 });
 
+router.get("/sightings/spotter-stats", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select({
+      spotterName: sightingsTable.spotterName,
+      count: sql<number>`cast(count(*) as int)`,
+    })
+    .from(sightingsTable)
+    .where(sql`${sightingsTable.spotterName} is not null and trim(${sightingsTable.spotterName}) != ''`)
+    .groupBy(sightingsTable.spotterName)
+    .orderBy(desc(sql`count(*)`))
+    .limit(10);
+
+  res.json(rows);
+});
+
 router.get("/sightings/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const parsed = GetSightingParams.safeParse({ id: parseInt(raw, 10) });
