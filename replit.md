@@ -28,7 +28,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## Apps
 
-### Campus Spotter (`artifacts/campus-spotter`)
+### Campus Cartographer (`artifacts/campus-spotter`)
 
 A crowd-sourced university apparel sighting tracker.
 

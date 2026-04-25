@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Campus Spotter"
+title = "Campus Cartographer"
 version = "1.0.0"
 id = "artifacts/campus-spotter"
 router = "path"
