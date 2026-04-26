@@ -26,11 +26,13 @@ function Router() {
 }
 
 function App() {
-  // Use Railway backend in production, localhost in development
-  const baseUrl = import.meta.env.DEV 
-    ? "http://localhost:3000" 
-    : "https://your-railway-url.up.railway.app"; // Replace with your actual Railway URL
-  
+  const rawBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const baseUrl = rawBaseUrl
+    ? rawBaseUrl.replace(/\/\/+$/, "")
+    : import.meta.env.DEV
+    ? "http://localhost:3000"
+    : `${window.location.origin}/api`;
+
   setBaseUrl(baseUrl);
   return (
     <ThemeProvider defaultTheme="dark" storageKey="campus-spotter-theme">
