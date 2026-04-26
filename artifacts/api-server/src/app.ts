@@ -28,6 +28,10 @@ app.use(
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use((_req, res, next) => {
+  res.setHeader("Referrer-Policy", "origin-when-cross-origin");
+  next();
+});
 
 app.use("/api", router);
 

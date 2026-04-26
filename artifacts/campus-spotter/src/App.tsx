@@ -8,6 +8,7 @@ import MapPage from "@/pages/map";
 import LogPage from "@/pages/log";
 import StatsPage from "@/pages/stats";
 import { ThemeProvider } from "@/components/theme-provider";
+import { setBaseUrl } from "@workspace/api-client-react";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,12 @@ function Router() {
 }
 
 function App() {
+  // Use Railway backend in production, localhost in development
+  const baseUrl = import.meta.env.DEV 
+    ? "http://localhost:3000" 
+    : "https://your-railway-url.up.railway.app"; // Replace with your actual Railway URL
+  
+  setBaseUrl(baseUrl);
   return (
     <ThemeProvider defaultTheme="dark" storageKey="campus-spotter-theme">
       <QueryClientProvider client={queryClient}>
