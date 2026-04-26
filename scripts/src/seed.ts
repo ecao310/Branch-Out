@@ -1,4 +1,4 @@
-import { db, sightingsTable } from "../../lib/db/src/index.ts";
+import { db, sightingsTable } from "../../lib/db/src/index";
 
 const data = [
   {
