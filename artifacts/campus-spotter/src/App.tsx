@@ -28,10 +28,8 @@ function Router() {
 function App() {
   const rawBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const baseUrl = rawBaseUrl
-    ? rawBaseUrl.replace(/\/\/+$/, "")
-    : import.meta.env.DEV
-    ? "http://localhost:3000"
-    : `${window.location.origin}/api`;
+    ? rawBaseUrl.replace(/\/+$/, "")
+    : window.location.origin;
 
   setBaseUrl(baseUrl);
   return (
