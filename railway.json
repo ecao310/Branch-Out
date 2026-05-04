@@ -1,4 +1,9 @@
 {
-  "build": "pnpm run build",
-  "start": "pnpm run start"
+  "$schema": "https://schema.railway.com/railway.json",
+  "build": {
+    "buildCommand": "pnpm run build"
+  },
+  "deploy": {
+    "startCommand": "pnpm run start"
+  }
 }
