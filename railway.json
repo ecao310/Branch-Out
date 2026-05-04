@@ -1,9 +1,9 @@
 {
-  "$schema": "https://schema.railway.com/railway.json",
+  "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "buildCommand": "pnpm run build"
+    "buildCommand": "pnpm --filter @workspace/api-server build"
   },
   "deploy": {
-    "startCommand": "pnpm run start"
+    "startCommand": "pnpm --filter @workspace/api-server start"
   }
 }
