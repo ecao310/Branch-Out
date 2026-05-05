@@ -1,9 +1,0 @@
-{
-  "$schema": "https://schema.railway.com/railway.json",
-  "build": {
-    "buildCommand": "pnpm install && pnpm --filter @workspace/campus-spotter run build"
-  },
-  "deploy": {
-    "startCommand": "pnpm --filter @workspace/campus-spotter run serve"
-  }
-}
