@@ -4,6 +4,6 @@
     "buildCommand": "pnpm install && pnpm --filter @workspace/campus-spotter run build"
   },
   "deploy": {
-    "startCommand": "pnpm --filter @workspace/campus-spotter run preview"
+    "startCommand": "pnpm --filter @workspace/campus-spotter run serve"
   }
 }
