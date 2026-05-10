@@ -2,8 +2,6 @@
 
 A crowd-sourced map for spotting college gear in the wild. Log sightings of university sweatshirts, hats, and gear you spot out in the real world, and see where other schools are repping themselves on the map.
 
-**Live at:** [campus-cartographer.aaronmanprojects.com](https://campus-cartographer.aaronmanprojects.com)
-
 ---
 
 ## Features
