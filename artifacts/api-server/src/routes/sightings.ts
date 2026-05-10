@@ -72,18 +72,23 @@ router.post("/sightings", async (req, res): Promise<void> => {
     return;
   }
 
-  const [sighting] = await db
-    .insert(sightingsTable)
-    .values({
-      university: parsed.data.university,
-      latitude: parsed.data.latitude ?? null,
-      longitude: parsed.data.longitude ?? null,
-      notes: parsed.data.notes ?? null,
-      spotterName: parsed.data.spotterName ?? null,
-    })
-    .returning();
+  try {
+    const [sighting] = await db
+      .insert(sightingsTable)
+      .values({
+        university: parsed.data.university,
+        latitude: parsed.data.latitude ?? null,
+        longitude: parsed.data.longitude ?? null,
+        notes: parsed.data.notes ?? null,
+        spotterName: parsed.data.spotterName ?? null,
+      })
+      .returning();
 
-  res.status(201).json(GetSightingResponse.parse(sighting));
+    res.status(201).json(GetSightingResponse.parse(sighting));
+  } catch (err) {
+    console.error("INSERT ERROR:", err);
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 router.get("/sightings/stats", async (_req, res): Promise<void> => {
