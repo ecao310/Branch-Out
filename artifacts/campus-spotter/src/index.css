@@ -201,3 +201,8 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Fix for Radix UI dropdowns appearing behind Leaflet maps */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,6 +15,7 @@ import { MapPin, Navigation, Loader2, Check, ChevronsUpDown, X } from "lucide-re
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import L from "leaflet";
 
 const SPOTTER_NAME_KEY = "campus-spotter-name";
 const UNIVERSITIES_QUERY_KEY = ["universities"];
@@ -39,6 +40,147 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+interface LocationMapProps {
+  coords: { lat: number; lng: number };
+  onCoordsChange: (coords: { lat: number; lng: number }) => void;
+}
+
+function LocationMap({ coords, onCoordsChange }: LocationMapProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    if (!mapRef.current || mapInstanceRef.current) return;
+
+    const map = L.map(mapRef.current, {
+      center: [coords.lat, coords.lng],
+      zoom: 16,
+      zoomControl: true,
+
+      // IMPORTANT FIX
+      scrollWheelZoom: "center",
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Only commit coordinates after ALL movement finishes
+    map.on("moveend", () => {
+      const center = map.getCenter();
+
+      prevCoordsRef.current = {
+        lat: center.lat,
+        lng: center.lng,
+      };
+
+      onCoordsChange({
+        lat: center.lat,
+        lng: center.lng,
+      });
+    });
+
+    mapInstanceRef.current = map;
+
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, []);
+
+  // If coords change externally (e.g. re-locate button), pan map there without changing zoom
+  const prevCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    const prev = prevCoordsRef.current;
+
+    // Only re-center for EXTERNAL location updates
+    if (
+      !prev ||
+      Math.abs(prev.lat - coords.lat) > 0.00001 ||
+      Math.abs(prev.lng - coords.lng) > 0.00001
+    ) {
+      mapInstanceRef.current.panTo([coords.lat, coords.lng]);
+    }
+
+    prevCoordsRef.current = coords;
+  }, []);
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        height: "220px",
+        width: "100%",
+        borderRadius: "8px",
+        overflow: "hidden",
+      }}
+      className="border border-border"
+    >
+      <div
+        ref={mapRef}
+        style={{
+          height: "100%",
+          width: "100%",
+        }}
+      />
+
+      {/* Fixed screen-space crosshair */}
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: "32px",
+          height: "32px",
+          transform: "translate(-50%, -50%)",
+          pointerEvents: "none",
+          zIndex: 1000,
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: 0,
+            right: 0,
+            height: "2px",
+            background: "#ef4444",
+            transform: "translateY(-50%)",
+          }}
+        />
+
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: 0,
+            bottom: 0,
+            width: "2px",
+            background: "#ef4444",
+            transform: "translateX(-50%)",
+          }}
+        />
+
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            width: "10px",
+            height: "10px",
+            borderRadius: "50%",
+            background: "#ef4444",
+            transform: "translate(-50%, -50%)",
+            boxShadow: "0 0 0 3px white, 0 0 0 5px #ef4444",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function LogPage() {
   const [, setLocation] = useLocation();
@@ -255,7 +397,7 @@ export default function LogPage() {
 
               <div className="space-y-3">
                 <label className="text-sm font-medium leading-none">Location</label>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-3">
                   <div className="flex gap-2 items-center">
                     <Button
                       type="button"
@@ -291,10 +433,14 @@ export default function LogPage() {
                   </div>
 
                   {coords && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Lat: {coords.lat.toFixed(4)}, Lng: {coords.lng.toFixed(4)}
-                    </p>
+                    <>
+                      <LocationMap coords={coords} onCoordsChange={setCoords} />
+                      <p className="text-xs text-muted-foreground text-center">
+                        Drag the map to adjust · {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+                      </p>
+                    </>
                   )}
+
                   {locationError && (
                     <p className="text-xs text-destructive text-center">{locationError}</p>
                   )}
