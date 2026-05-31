@@ -81,6 +81,14 @@ function LocationMap({ coords, onCoordsChange }: LocationMapProps) {
       });
     });
 
+    // Allow mouse clicks as well as drag/pan to choose a new location.
+    map.on("click", (event) => {
+      const { lat, lng } = event.latlng;
+      prevCoordsRef.current = { lat, lng };
+      map.panTo([lat, lng]);
+      onCoordsChange({ lat, lng });
+    });
+
     mapInstanceRef.current = map;
 
     return () => {

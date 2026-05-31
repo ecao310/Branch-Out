@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import { useListSightings, getListSightingsQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 // School colors map - official colors for common universities
 const SCHOOL_COLORS: Record<string, { bg: string; text: string }> = {
@@ -78,9 +79,30 @@ function createSchoolIcon(university: string): L.DivIcon {
 }
 
 export default function MapPage() {
+  const queryClient = useQueryClient();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  const markerByIdRef = useRef<Record<number, L.Marker>>({});
+
+  // Refetch sightings when a specific sighting is selected to ensure data is fresh
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = Number(params.get("selected"));
+      if (Number.isInteger(id) && id > 0) {
+        console.log("🔄 Invalidating sightings query for selectedSightingId:", id);
+        queryClient.invalidateQueries({ queryKey: getListSightingsQueryKey({}) });
+      }
+    };
+
+    // Listen for popstate events (browser back/forward)
+    window.addEventListener("popstate", handleUrlChange);
+    // Also call once on mount to handle direct navigation
+    handleUrlChange();
+
+    return () => window.removeEventListener("popstate", handleUrlChange);
+  }, [queryClient]);
 
   const { data: sightings } = useListSightings({}, {
     query: { queryKey: getListSightingsQueryKey({}) }
@@ -102,9 +124,20 @@ export default function MapPage() {
   }, []);
 
   useEffect(() => {
-    if (!markersRef.current || !sightings) return;
+    if (!markersRef.current || !sightings || !mapInstanceRef.current) return;
     const markers = markersRef.current;
+    const map = mapInstanceRef.current;
     markers.clearLayers();
+    const markerById: Record<number, L.Marker> = {};
+
+    // Recalculate selectedSightingId from current URL
+    const params = new URLSearchParams(window.location.search);
+    const selectedId = Number(params.get("selected"));
+    const currentSelectedSightingId = Number.isInteger(selectedId) && selectedId > 0 ? selectedId : undefined;
+
+    console.log("📍 Creating markers. Total sightings:", sightings.length);
+    console.log("🎯 Looking for selectedSightingId:", currentSelectedSightingId);
+
     sightings.forEach(sighting => {
       if (sighting.latitude == null || sighting.longitude == null) return;
       const date = new Date(sighting.createdAt).toLocaleDateString();
@@ -127,8 +160,27 @@ export default function MapPage() {
           ${sighting.notes ? `<p style="margin: 6px 0 0; font-size: 13px; font-style: italic;">"${sighting.notes}"</p>` : ''}
         </div>
       `);
+      markerById[sighting.id] = marker;
       markers.addLayer(marker);
     });
+
+    markerByIdRef.current = markerById;
+    console.log("✅ Marker map created. Sighting IDs available:", Object.keys(markerById).map(Number));
+
+    if (currentSelectedSightingId && markerById[currentSelectedSightingId]) {
+      console.log("🎯 Found selected marker! Zooming and opening popup.");
+      const selectedMarker = markerById[currentSelectedSightingId];
+      const latLng = selectedMarker.getLatLng();
+      console.log("📌 Marker location:", latLng);
+      map.setView(latLng, 17);
+      // Use a small timeout to ensure the popup renders properly
+      setTimeout(() => {
+        selectedMarker.openPopup();
+        console.log("📬 Popup opened");
+      }, 100);
+    } else {
+      console.log("❌ Selected marker NOT found. selectedSightingId:", currentSelectedSightingId, "Available IDs:", Object.keys(markerById));
+    }
   }, [sightings]);
 
   return (

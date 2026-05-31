@@ -2,6 +2,7 @@ import { useGetSightingStats, getGetSightingStatsQueryKey, useGetRecentSightings
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { Trophy, Clock, MapPin, User } from "lucide-react";
+import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type SpotterStat = { spotterName: string | null; count: number };
@@ -18,6 +19,8 @@ function useSpotterStats() {
 }
 
 export default function StatsPage() {
+  const [, setLocation] = useLocation();
+
   const { data: stats, isLoading: statsLoading } = useGetSightingStats({
     query: { queryKey: getGetSightingStatsQueryKey() }
   });
@@ -27,6 +30,11 @@ export default function StatsPage() {
   });
 
   const { data: spotters, isLoading: spottersLoading } = useSpotterStats();
+
+  const handleSelectRecent = (id: number) => {
+    console.log("👆 Clicked recent activity icon for sighting ID:", id);
+    setLocation(`/map?selected=${id}`);
+  };
 
   const maxCount = stats?.length ? Math.max(...stats.map(s => s.count)) : 1;
   const maxSpotterCount = spotters?.length ? Math.max(...spotters.map(s => s.count)) : 1;
@@ -142,9 +150,14 @@ export default function StatsPage() {
             ) : (
               recent?.map(sighting => (
                 <div key={sighting.id} className="flex gap-4 items-start">
-                  <div className="bg-primary/10 p-2 rounded-full text-primary shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectRecent(sighting.id)}
+                    className="bg-primary/10 p-2 rounded-full text-primary shrink-0 hover:bg-primary/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    aria-label={`Show ${sighting.university} sighting on map`}
+                  >
                     <MapPin className="h-5 w-5" />
-                  </div>
+                  </button>
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">
                       <span className="font-bold">{sighting.spotterName ?? "Someone"}</span>
