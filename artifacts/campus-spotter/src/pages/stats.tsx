@@ -71,41 +71,77 @@ export default function StatsPage() {
     const hottestSpotter = Object.keys(counts24).sort((a, b) => counts24[b] - counts24[a])[0] ?? null;
 
     // longest streak: compute longest consecutive-day streak per spotter
-    const bySpot: Record<string, Set<string>> = {};
+    const bySpot: Record<string, Record<string, number>> = {};
     sightings.forEach(s => {
       if (!s.spotterName) return;
-      const day = new Date(s.createdAt).toISOString().slice(0, 10);
-      bySpot[s.spotterName] = bySpot[s.spotterName] || new Set();
-      bySpot[s.spotterName].add(day);
+      const createdAt = new Date(s.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return;
+
+      const day = createdAt.toISOString().slice(0, 10);
+      bySpot[s.spotterName] = bySpot[s.spotterName] || {};
+
+      const previousEarliest = bySpot[s.spotterName][day];
+      if (previousEarliest === undefined || createdAt.getTime() < previousEarliest) {
+        bySpot[s.spotterName][day] = createdAt.getTime();
+      }
     });
 
-    const longestStreakBySpot: Record<string, number> = {};
-    for (const [name, daysSet] of Object.entries(bySpot)) {
-      const days = Array.from(daysSet).sort();
+    type StreakInfo = {
+      longest: number;
+      lastDayEarliest: number;
+    };
+
+    const longestStreakBySpot: Record<string, StreakInfo> = {};
+    for (const [name, dayMap] of Object.entries(bySpot)) {
+      const days = Object.entries(dayMap).sort(([a], [b]) => a.localeCompare(b));
       let longest = 0;
       let current = 0;
-      let prev: Date | null = null;
-      for (const d of days) {
-        const dt = new Date(d + "T00:00:00Z");
-        if (prev == null) {
+      let currentLastDayEarliest = Number.POSITIVE_INFINITY;
+      let bestLastDayEarliest = Number.POSITIVE_INFINITY;
+      let prevDayStart: number | null = null;
+
+      for (const [day, earliestTime] of days) {
+        const dt = new Date(day + "T00:00:00Z");
+        const dayStart = Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
+
+        if (prevDayStart === null || dayStart !== prevDayStart + 24 * 60 * 60 * 1000) {
           current = 1;
+          currentLastDayEarliest = earliestTime;
         } else {
-          const diff = (dt.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-          if (diff === 1) current += 1;
-          else current = 1;
+          current += 1;
+          currentLastDayEarliest = earliestTime;
         }
-        longest = Math.max(longest, current);
-        prev = dt;
+
+        if (
+          current > longest ||
+          (current === longest && currentLastDayEarliest < bestLastDayEarliest)
+        ) {
+          longest = current;
+          bestLastDayEarliest = currentLastDayEarliest;
+        }
+
+        prevDayStart = dayStart;
       }
-      longestStreakBySpot[name] = longest;
+
+      longestStreakBySpot[name] = {
+        longest,
+        lastDayEarliest: bestLastDayEarliest,
+      };
     }
 
-    const longestSpotter = Object.keys(longestStreakBySpot).sort((a, b) => longestStreakBySpot[b] - longestStreakBySpot[a])[0] ?? null;
+    const longestSpotter = Object.keys(longestStreakBySpot)
+      .sort((a, b) => {
+        const aInfo = longestStreakBySpot[a];
+        const bInfo = longestStreakBySpot[b];
+        if (bInfo.longest !== aInfo.longest) return bInfo.longest - aInfo.longest;
+        return aInfo.lastDayEarliest - bInfo.lastDayEarliest;
+      })[0] ?? null;
 
     return {
       topSpotter,
       hottestSpotter,
       longestSpotter,
+      longestStreak: longestSpotter ? longestStreakBySpot[longestSpotter].longest : 0,
       mostRecentIdFor,
     };
   }, [allSightings, spotters]);
@@ -169,7 +205,7 @@ export default function StatsPage() {
                     if (id) setLocation(`/map?selected=${id}`);
                   }}
                 >
-                  {leaderboard.longestSpotter ? `${leaderboard.longestSpotter} 🏆` : "—"}
+                  {leaderboard.longestSpotter ? `${leaderboard.longestSpotter} (${leaderboard.longestStreak}d) 🏆` : "—"}
                 </button>
               </div>
               <div />
