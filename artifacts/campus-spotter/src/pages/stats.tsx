@@ -1,7 +1,7 @@
-import { useGetSightingStats, getGetSightingStatsQueryKey, useGetRecentSightings, getGetRecentSightingsQueryKey } from "@workspace/api-client-react";
+import React from "react";
+import { useGetSightingStats, getGetSightingStatsQueryKey, useGetRecentSightings, getGetRecentSightingsQueryKey, useListSightings, getListSightingsQueryKey } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
-import { formatDistanceToNow } from "date-fns";
-import { Trophy, Clock, MapPin, User } from "lucide-react";
+import { Trophy, User } from "lucide-react";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -29,6 +29,9 @@ export default function StatsPage() {
     query: { queryKey: getGetRecentSightingsQueryKey() }
   });
 
+  // Full sightings list (used for leaderboard calculations and client-side batching)
+  const { data: allSightings } = useListSightings({}, { query: { queryKey: getListSightingsQueryKey({}) } });
+
   const { data: spotters, isLoading: spottersLoading } = useSpotterStats();
 
   const handleSelectRecent = (id: number) => {
@@ -39,13 +42,139 @@ export default function StatsPage() {
   const maxCount = stats?.length ? Math.max(...stats.map(s => s.count)) : 1;
   const maxSpotterCount = spotters?.length ? Math.max(...spotters.map(s => s.count)) : 1;
 
+  // batching state for categories
+  const BATCH = 10;
+  const [universitiesVisible, setUniversitiesVisible] = React.useState(BATCH);
+  const [spottersVisible, setSpottersVisible] = React.useState(BATCH);
+
+  // Leaderboard calculations
+  const leaderboard = React.useMemo(() => {
+    const sightings = allSightings || [];
+
+    // helper: find most recent sighting id for a spotter
+    const mostRecentIdFor = (name?: string | null) => {
+      if (!name) return undefined;
+      const s = sightings.filter(x => x.spotterName === name).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return s[0]?.id;
+    };
+
+    const topSpotter = spotters?.[0]?.spotterName ?? null;
+
+    // hottest streak: count sightings per spotter in last 24h
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const counts24: Record<string, number> = {};
+    sightings.forEach(s => {
+      if (new Date(s.createdAt).getTime() >= cutoff && s.spotterName) {
+        counts24[s.spotterName] = (counts24[s.spotterName] || 0) + 1;
+      }
+    });
+    const hottestSpotter = Object.keys(counts24).sort((a, b) => counts24[b] - counts24[a])[0] ?? null;
+
+    // longest streak: compute longest consecutive-day streak per spotter
+    const bySpot: Record<string, Set<string>> = {};
+    sightings.forEach(s => {
+      if (!s.spotterName) return;
+      const day = new Date(s.createdAt).toISOString().slice(0, 10);
+      bySpot[s.spotterName] = bySpot[s.spotterName] || new Set();
+      bySpot[s.spotterName].add(day);
+    });
+
+    const longestStreakBySpot: Record<string, number> = {};
+    for (const [name, daysSet] of Object.entries(bySpot)) {
+      const days = Array.from(daysSet).sort();
+      let longest = 0;
+      let current = 0;
+      let prev: Date | null = null;
+      for (const d of days) {
+        const dt = new Date(d + "T00:00:00Z");
+        if (prev == null) {
+          current = 1;
+        } else {
+          const diff = (dt.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+          if (diff === 1) current += 1;
+          else current = 1;
+        }
+        longest = Math.max(longest, current);
+        prev = dt;
+      }
+      longestStreakBySpot[name] = longest;
+    }
+
+    const longestSpotter = Object.keys(longestStreakBySpot).sort((a, b) => longestStreakBySpot[b] - longestStreakBySpot[a])[0] ?? null;
+
+    return {
+      topSpotter,
+      hottestSpotter,
+      longestSpotter,
+      mostRecentIdFor,
+    };
+  }, [allSightings, spotters]);
+
+
   return (
     <div className="w-full h-full overflow-y-auto p-4 sm:p-6 lg:p-8 bg-muted/20">
       <div className="max-w-4xl mx-auto space-y-8">
 
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Leaderboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Stats</h1>
           <p className="text-muted-foreground mt-2">Which university has the widest reach?</p>
+        </div>
+
+        {/* Top Leaderboard quick links */}
+        <div className="bg-card border rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Trophy className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-bold">Leaderboard</h2>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Top Spotter</p>
+                <button
+                  className="text-sm font-medium"
+                  onClick={() => {
+                    const id = leaderboard.mostRecentIdFor(leaderboard.topSpotter);
+                    if (id) setLocation(`/map?selected=${id}`);
+                  }}
+                >
+                  {leaderboard.topSpotter ? `${leaderboard.topSpotter} 👑` : "—"}
+                </button>
+              </div>
+              <div />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Hottest Streak (24h)</p>
+                <button
+                  className="text-sm font-medium"
+                  onClick={() => {
+                    const id = leaderboard.mostRecentIdFor(leaderboard.hottestSpotter);
+                    if (id) setLocation(`/map?selected=${id}`);
+                  }}
+                >
+                  {leaderboard.hottestSpotter ? `${leaderboard.hottestSpotter} 🔥` : "—"}
+                </button>
+              </div>
+              <div />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Longest Streak</p>
+                <button
+                  className="text-sm font-medium"
+                  onClick={() => {
+                    const id = leaderboard.mostRecentIdFor(leaderboard.longestSpotter);
+                    if (id) setLocation(`/map?selected=${id}`);
+                  }}
+                >
+                  {leaderboard.longestSpotter ? `${leaderboard.longestSpotter} 🏆` : "—"}
+                </button>
+              </div>
+              <div />
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -66,23 +195,33 @@ export default function StatsPage() {
                   No sightings yet. Be the first to log one!
                 </div>
               ) : (
-                stats?.map((stat, i) => (
-                  <div key={stat.university} className="relative">
-                    <div className="flex justify-between items-center mb-1 text-sm font-medium z-10 relative px-2">
-                      <span className="flex items-center gap-2">
-                        <span className="text-muted-foreground w-4">{i + 1}.</span>
-                        {stat.university}
-                      </span>
-                      <span>{stat.count}</span>
+                <>
+                  {stats.slice(0, universitiesVisible).map((stat) => {
+                    const rank = stats.findIndex(s => s.university === stat.university) + 1;
+                    return (
+                      <div key={stat.university} className="relative">
+                        <div className="flex justify-between items-center mb-1 text-sm font-medium z-10 relative px-2">
+                          <span className="flex items-center gap-2">
+                            <span className="text-muted-foreground w-4">{rank}.</span>
+                            {stat.university}
+                          </span>
+                          <span>{stat.count}</span>
+                        </div>
+                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all duration-1000 ease-out"
+                            style={{ width: `${(stat.count / maxCount) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {stats.length > universitiesVisible && (
+                    <div className="mt-4 flex justify-center">
+                      <button onClick={() => setUniversitiesVisible(c => Math.min(stats.length, c + BATCH))} className="px-3 py-1 rounded-md bg-primary text-white">See more</button>
                     </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-1000 ease-out"
-                        style={{ width: `${(stat.count / maxCount) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -103,81 +242,40 @@ export default function StatsPage() {
                   No named spotters yet. Add your name when logging!
                 </div>
               ) : (
-                spotters.map((spotter, i) => (
-                  <div key={spotter.spotterName} className="relative">
-                    <div className="flex justify-between items-center mb-1 text-sm font-medium z-10 relative px-2">
-                      <span className="flex items-center gap-2">
-                        <span className="text-muted-foreground w-4">{i + 1}.</span>
-                        {spotter.spotterName}
-                      </span>
-                      <span>{spotter.count} {spotter.count === 1 ? "sighting" : "sightings"}</span>
+                <>
+                  {spotters.slice(0, spottersVisible).map((spotter) => {
+                    const rank = spotters.findIndex(s => s.spotterName === spotter.spotterName) + 1;
+                    return (
+                      <div key={spotter.spotterName} className="relative">
+                        <div className="flex justify-between items-center mb-1 text-sm font-medium z-10 relative px-2">
+                          <span className="flex items-center gap-2">
+                            <span className="text-muted-foreground w-4">{rank}.</span>
+                            {spotter.spotterName}
+                          </span>
+                          <span>{spotter.count} {spotter.count === 1 ? "sighting" : "sightings"}</span>
+                        </div>
+                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all duration-1000 ease-out"
+                            style={{ width: `${(spotter.count / maxSpotterCount) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {spotters.length > spottersVisible && (
+                    <div className="mt-4 flex justify-center">
+                      <button onClick={() => setSpottersVisible(c => Math.min(spotters.length, c + BATCH))} className="px-3 py-1 rounded-md bg-primary text-white">See more</button>
                     </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-1000 ease-out"
-                        style={{ width: `${(spotter.count / maxSpotterCount) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))
+                  )}
+                </>
               )}
             </div>
           </div>
 
         </div>
 
-        <div className="bg-card border rounded-xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <Clock className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-bold">Recent Activity</h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {recentLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex gap-3">
-                  <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-                  <div className="space-y-2 w-full">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                </div>
-              ))
-            ) : recent?.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground col-span-2">
-                No recent activity.
-              </div>
-            ) : (
-              recent?.map(sighting => (
-                <div key={sighting.id} className="flex gap-4 items-start">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectRecent(sighting.id)}
-                    className="bg-primary/10 p-2 rounded-full text-primary shrink-0 hover:bg-primary/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    aria-label={`Show ${sighting.university} sighting on map`}
-                  >
-                    <MapPin className="h-5 w-5" />
-                  </button>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      <span className="font-bold">{sighting.spotterName ?? "Someone"}</span>
-                      {" spotted "}
-                      <span className="font-bold">{sighting.university}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(sighting.createdAt), { addSuffix: true })}
-                    </p>
-                    {sighting.notes && (
-                      <p className="text-sm mt-2 text-foreground/80 bg-muted/50 p-2 rounded-md">
-                        "{sighting.notes}"
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        {/* Recent Activity moved to its own tab */}
 
       </div>
     </div>

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import { useListSightings, getListSightingsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 // School colors map - official colors for common universities
 const SCHOOL_COLORS: Record<string, { bg: string; text: string }> = {
@@ -108,6 +109,27 @@ export default function MapPage() {
     query: { queryKey: getListSightingsQueryKey({}) }
   });
 
+  // Get the selected sighting ID from URL
+  const getSelectedId = () => {
+    const params = new URLSearchParams(window.location.search);
+    const id = Number(params.get("selected"));
+    return Number.isInteger(id) && id > 0 ? id : undefined;
+  };
+
+  const selectedId = getSelectedId();
+
+  // Fetch a single sighting if selected but not in the list
+  const { data: selectedSighting } = useQuery({
+    queryKey: ["sighting", selectedId],
+    queryFn: async () => {
+      if (!selectedId) return null;
+      const res = await fetch(`/api/sightings/${selectedId}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!selectedId && (!sightings || !sightings.find(s => s.id === selectedId)),
+  });
+
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
     const map = L.map(mapRef.current).setView([37.7749, -122.4194], 12);
@@ -167,7 +189,36 @@ export default function MapPage() {
     markerByIdRef.current = markerById;
     console.log("✅ Marker map created. Sighting IDs available:", Object.keys(markerById).map(Number));
 
-    if (currentSelectedSightingId && markerById[currentSelectedSightingId]) {
+    // Check if we have a separately fetched selected sighting
+    if (selectedId && selectedSighting && selectedSighting.latitude != null && selectedSighting.longitude != null) {
+      console.log("🎯 Found separately fetched selected sighting:", selectedSighting.id);
+      const { bg, text } = getSchoolStyle(selectedSighting.university);
+      const selectedMarker = L.marker([selectedSighting.latitude, selectedSighting.longitude], {
+        icon: createSchoolIcon(selectedSighting.university)
+      }).bindPopup(`
+        <div style="font-family: Georgia, serif; min-width: 160px;">
+          <div style="
+            background: ${bg};
+            color: ${text};
+            margin: -13px -20px 10px -20px;
+            padding: 10px 16px;
+            border-radius: 4px 4px 0 0;
+            font-weight: bold;
+            font-size: 15px;
+          ">${selectedSighting.university}</div>
+          <p style="margin: 0; font-size: 12px; color: #888;">Spotted ${new Date(selectedSighting.createdAt).toLocaleDateString()}</p>
+          ${selectedSighting.spotterName ? `<p style="margin: 6px 0 0; font-size: 13px;">by <strong>${selectedSighting.spotterName}</strong></p>` : ''}
+          ${selectedSighting.notes ? `<p style="margin: 6px 0 0; font-size: 13px; font-style: italic;">"${selectedSighting.notes}"</p>` : ''}
+        </div>
+      `);
+      markerByIdRef.current[selectedSighting.id] = selectedMarker;
+      markers.addLayer(selectedMarker);
+      map.setView([selectedSighting.latitude, selectedSighting.longitude], 17);
+      setTimeout(() => {
+        selectedMarker.openPopup();
+        console.log("📬 Popup opened for fetched sighting");
+      }, 100);
+    } else if (currentSelectedSightingId && markerById[currentSelectedSightingId]) {
       console.log("🎯 Found selected marker! Zooming and opening popup.");
       const selectedMarker = markerById[currentSelectedSightingId];
       const latLng = selectedMarker.getLatLng();
@@ -181,7 +232,7 @@ export default function MapPage() {
     } else {
       console.log("❌ Selected marker NOT found. selectedSightingId:", currentSelectedSightingId, "Available IDs:", Object.keys(markerById));
     }
-  }, [sightings]);
+  }, [sightings, selectedSighting]);
 
   return (
     <div className="relative w-full h-full">

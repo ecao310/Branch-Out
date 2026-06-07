@@ -7,6 +7,7 @@ import { Layout } from "@/components/layout";
 import MapPage from "@/pages/map";
 import LogPage from "@/pages/log";
 import StatsPage from "@/pages/stats";
+import RecentPage from "@/pages/recent";
 import { ThemeProvider } from "@/components/theme-provider";
 import { setBaseUrl } from "@workspace/api-client-react";
 
@@ -18,6 +19,7 @@ function Router() {
       <Switch>
         <Route path="/" component={LogPage} />
         <Route path="/map" component={MapPage} />
+          <Route path="/recent" component={RecentPage} />
         <Route path="/stats" component={StatsPage} />
         <Route component={NotFound} />
       </Switch>
