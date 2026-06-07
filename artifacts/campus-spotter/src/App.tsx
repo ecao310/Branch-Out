@@ -17,10 +17,10 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={LogPage} />
         <Route path="/map" component={MapPage} />
-          <Route path="/recent" component={RecentPage} />
+        <Route path="/recent" component={RecentPage} />
         <Route path="/stats" component={StatsPage} />
+        <Route path="/" component={LogPage} exact />
         <Route component={NotFound} />
       </Switch>
     </Layout>

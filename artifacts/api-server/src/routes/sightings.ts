@@ -123,8 +123,7 @@ router.get("/sightings/spotter-stats", async (_req, res): Promise<void> => {
     .from(sightingsTable)
     .where(sql`${sightingsTable.spotterName} is not null and trim(${sightingsTable.spotterName}) != ''`)
     .groupBy(sightingsTable.spotterName)
-    .orderBy(desc(sql`count(*)`))
-    .limit(10);
+    .orderBy(desc(sql`count(*)`));
 
   res.json(rows);
 });
