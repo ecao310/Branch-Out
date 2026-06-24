@@ -17,7 +17,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from "@/lib/utils";
 import L from "leaflet";
 
-const SPOTTER_NAME_KEY = "campus-spotter-name";
+const SPOTTER_NAME_KEY = "branch-out-name";
 const UNIVERSITIES_QUERY_KEY = ["universities"];
 
 function useUniversities() {

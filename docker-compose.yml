@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: campus_cartographer
+      POSTGRES_DB: branch_out
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:

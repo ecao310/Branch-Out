@@ -1,4 +1,4 @@
-# Campus Cartographer 
+# Branch Out 
 
 A crowd-sourced map for spotting college gear in the wild. Log sightings of university sweatshirts, hats, and gear you spot out in the real world, and see where other schools are repping themselves on the map.
 
@@ -33,7 +33,7 @@ A crowd-sourced map for spotting college gear in the wild. Log sightings of univ
 Campus-Cartographer/
 ├── artifacts/
 │   ├── api-server/        # Express backend
-│   └── campus-spotter/    # React frontend
+│   └── branch-out/    # React frontend
 ├── lib/
 │   ├── db/                # Drizzle schema and database client
 │   └── api-zod/           # Shared API types and validation
@@ -71,7 +71,7 @@ Campus-Cartographer/
    PORT=3000
    ```
 
-   Create `.env` in `artifacts/campus-spotter/`:
+   Create `.env` in `artifacts/branch-out/`:
    ```
    VITE_API_BASE_URL=http://localhost:3000
    ```
@@ -89,7 +89,7 @@ Campus-Cartographer/
 
 6. **Start the frontend** (new terminal)
    ```bash
-   cd artifacts/campus-spotter
+   cd artifacts/branch-out
    npx vite --config vite.config.ts --host 0.0.0.0
    ```
 

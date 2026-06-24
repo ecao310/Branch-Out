@@ -50,3 +50,4 @@ Thumbs.db
 .env
 artifacts/campus-spotter/.env
 ecosystem.config.cjs
+.claude/

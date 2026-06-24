@@ -35,7 +35,7 @@ function App() {
 
   setBaseUrl(baseUrl);
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="campus-spotter-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="branch-out-theme">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>

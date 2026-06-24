@@ -13,7 +13,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="h-14 border-b flex items-center justify-between px-4 shrink-0 bg-card z-10 relative">
         <div className="flex items-center gap-2">
           <MapPin className="h-6 w-6 text-primary" />
-          <h1 className="font-bold text-xl tracking-tight hidden sm:block font-display">Campus Cartographer</h1>
+          <h1 className="font-bold text-xl tracking-tight hidden sm:block font-display">Branch Out</h1>
         </div>
 
         <div className="flex items-center gap-2">

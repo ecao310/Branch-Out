@@ -28,7 +28,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## Apps
 
-### Campus Cartographer (`artifacts/campus-spotter`)
+### Branch Out (`artifacts/branch-out`)
 
 A crowd-sourced university apparel sighting tracker.
 
