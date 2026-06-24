@@ -26,7 +26,7 @@ export default function RecentPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Recent Activity</h1>
-          <p className="text-muted-foreground mt-2">Latest sightings across campus.</p>
+          <p className="text-muted-foreground mt-2">Latest wildflower sightings from the field.</p>
         </div>
 
         <div className="bg-card border rounded-xl p-6 shadow-sm">
@@ -50,7 +50,7 @@ export default function RecentPage() {
                     type="button"
                     onClick={() => handleSelect(sighting.id)}
                     className="bg-primary/10 p-2 rounded-full text-primary shrink-0 hover:bg-primary/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                    aria-label={`Show ${sighting.university} sighting on map`}
+                    aria-label={`Show ${sighting.species} sighting on map`}
                   >
                     <MapPin className="h-5 w-5" />
                   </button>
@@ -58,9 +58,17 @@ export default function RecentPage() {
                     <p className="text-sm font-medium leading-none">
                       <span className="font-bold">{sighting.spotterName ?? "Someone"}</span>
                       {" spotted "}
-                      <span className="font-bold">{sighting.university}</span>
+                      <span className="font-bold">{sighting.species}</span>
                     </p>
                     <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(sighting.createdAt), { addSuffix: true })}</p>
+                    {sighting.photoUrl && (
+                      <img
+                        src={sighting.photoUrl}
+                        alt={sighting.species}
+                        className="mt-2 w-full max-w-[200px] h-28 object-cover rounded-md border"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    )}
                     {sighting.notes && (
                       <p className="text-sm mt-2 text-foreground/80 bg-muted/50 p-2 rounded-md">"{sighting.notes}"</p>
                     )}

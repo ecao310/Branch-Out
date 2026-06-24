@@ -11,24 +11,26 @@ export interface HealthStatus {
 
 export interface Sighting {
   id: number;
-  university: string;
+  species: string;
   latitude?: number | null;
   longitude?: number | null;
   notes?: string | null;
+  photoUrl?: string | null;
   spotterName?: string | null;
   createdAt: string;
 }
 
 export interface CreateSightingBody {
-  university: string;
+  species: string;
   latitude?: number | null;
   longitude?: number | null;
   notes?: string | null;
+  photoUrl?: string | null;
   spotterName?: string | null;
 }
 
-export interface UniversityStat {
-  university: string;
+export interface SpeciesStat {
+  species: string;
   count: number;
 }
 
@@ -38,7 +40,7 @@ export interface ErrorResponse {
 
 export type ListSightingsParams = {
   /**
-   * Filter by university name (case-insensitive partial match)
+   * Filter by flower species (case-insensitive partial match)
    */
-  university?: string;
+  species?: string;
 };

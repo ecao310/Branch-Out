@@ -5,7 +5,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCreateSighting, getListSightingsQueryKey, getGetRecentSightingsQueryKey, getGetSightingStatsQueryKey } from "@workspace/api-client-react";
-import { UNIVERSITIES as STATIC_UNIVERSITIES } from "@/lib/universities";
+import { FLOWERS as STATIC_SPECIES } from "@/lib/flowers";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -18,24 +18,25 @@ import { cn } from "@/lib/utils";
 import L from "leaflet";
 
 const SPOTTER_NAME_KEY = "branch-out-name";
-const UNIVERSITIES_QUERY_KEY = ["universities"];
+const SPECIES_QUERY_KEY = ["species"];
 
-function useUniversities() {
+function useSpecies() {
   return useQuery<string[]>({
-    queryKey: UNIVERSITIES_QUERY_KEY,
+    queryKey: SPECIES_QUERY_KEY,
     queryFn: async () => {
-      const res = await fetch("/api/universities");
-      if (!res.ok) throw new Error("Failed to fetch universities");
+      const res = await fetch("/api/species");
+      if (!res.ok) throw new Error("Failed to fetch species");
       return res.json();
     },
     staleTime: 5 * 60 * 1000,
-    placeholderData: STATIC_UNIVERSITIES,
+    placeholderData: STATIC_SPECIES,
   });
 }
 
 const formSchema = z.object({
   spotterName: z.string().optional(),
-  university: z.string().min(1, "Please select a university"),
+  species: z.string().min(1, "Please select a flower"),
+  photoUrl: z.string().url("Enter a valid image URL").optional().or(z.literal("")),
   notes: z.string().optional(),
 });
 
@@ -200,14 +201,15 @@ export default function LogPage() {
   const [searchValue, setSearchValue] = useState("");
   const [open, setOpen] = useState(false);
 
-  const { data: universities = STATIC_UNIVERSITIES } = useUniversities();
+  const { data: species = STATIC_SPECIES } = useSpecies();
   const createSighting = useCreateSighting();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       spotterName: localStorage.getItem(SPOTTER_NAME_KEY) ?? "",
-      university: "",
+      species: "",
+      photoUrl: "",
       notes: "",
     },
   });
@@ -249,30 +251,31 @@ export default function LogPage() {
     createSighting.mutate(
       {
         data: {
-          university: data.university,
+          species: data.species,
           latitude: coords?.lat ?? null,
           longitude: coords?.lng ?? null,
           notes: data.notes || null,
+          photoUrl: data.photoUrl?.trim() || null,
           spotterName: name,
         },
       },
       {
         onSuccess: () => {
           toast({
-            title: "Sighting logged!",
-            description: `Successfully logged sighting for ${data.university}.`,
+            title: "Flower logged!",
+            description: `Successfully logged a ${data.species} sighting.`,
           });
 
           queryClient.invalidateQueries({ queryKey: getListSightingsQueryKey({}) });
           queryClient.invalidateQueries({ queryKey: getGetRecentSightingsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetSightingStatsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: UNIVERSITIES_QUERY_KEY });
+          queryClient.invalidateQueries({ queryKey: SPECIES_QUERY_KEY });
 
           setLocation("/map");
         },
         onError: () => {
           toast({
-            title: "Failed to log sighting",
+            title: "Failed to log flower",
             description: "There was an error saving your sighting. Please try again.",
             variant: "destructive",
           });
@@ -281,18 +284,18 @@ export default function LogPage() {
     );
   };
 
-  const selectedUniversity = form.watch("university");
+  const selectedSpecies = form.watch("species");
   const trimmedSearch = searchValue.trim();
   const isCustomValue =
     trimmedSearch.length > 0 &&
-    !universities.some((u) => u.toLowerCase() === trimmedSearch.toLowerCase());
+    !species.some((s) => s.toLowerCase() === trimmedSearch.toLowerCase());
 
   return (
     <div className="w-full h-full overflow-y-auto p-4 sm:p-6 lg:p-8 bg-muted/20">
       <div className="max-w-md mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Add Sighting</h1>
-          <p className="text-muted-foreground mt-2">Spot someone wearing college gear? Log it here!</p>
+          <h1 className="text-3xl font-bold tracking-tight">Log a Flower</h1>
+          <p className="text-muted-foreground mt-2">Spotted a wildflower in bloom? Record it here!</p>
         </div>
 
         <div className="bg-card border rounded-xl p-6 shadow-sm">
@@ -315,10 +318,10 @@ export default function LogPage() {
 
               <FormField
                 control={form.control}
-                name="university"
+                name="species"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>University</FormLabel>
+                    <FormLabel>Flower Species</FormLabel>
                     <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -331,7 +334,7 @@ export default function LogPage() {
                               !field.value && "text-muted-foreground"
                             )}
                           >
-                            {field.value || "Select university"}
+                            {field.value || "Select flower"}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </FormControl>
@@ -339,7 +342,7 @@ export default function LogPage() {
                       <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
                         <Command>
                           <CommandInput
-                            placeholder="Search or type a university..."
+                            placeholder="Search or type a flower..."
                             value={searchValue}
                             onValueChange={setSearchValue}
                           />
@@ -350,7 +353,7 @@ export default function LogPage() {
                                   type="button"
                                   className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
                                   onClick={() => {
-                                    form.setValue("university", trimmedSearch, { shouldValidate: true });
+                                    form.setValue("species", trimmedSearch, { shouldValidate: true });
                                     setSearchValue("");
                                     setOpen(false);
                                   }}
@@ -358,16 +361,16 @@ export default function LogPage() {
                                   Add "<span className="font-semibold">{trimmedSearch}</span>"
                                 </button>
                               ) : (
-                                <p className="px-4 py-2 text-sm">No university found.</p>
+                                <p className="px-4 py-2 text-sm">No flower found.</p>
                               )}
                             </CommandEmpty>
                             <CommandGroup>
-                              {universities.map((university) => (
+                              {species.map((flower) => (
                                 <CommandItem
-                                  value={university}
-                                  key={university}
+                                  value={flower}
+                                  key={flower}
                                   onSelect={() => {
-                                    form.setValue("university", university, { shouldValidate: true });
+                                    form.setValue("species", flower, { shouldValidate: true });
                                     setSearchValue("");
                                     setOpen(false);
                                   }}
@@ -375,17 +378,17 @@ export default function LogPage() {
                                   <Check
                                     className={cn(
                                       "mr-2 h-4 w-4",
-                                      university === selectedUniversity ? "opacity-100" : "opacity-0"
+                                      flower === selectedSpecies ? "opacity-100" : "opacity-0"
                                     )}
                                   />
-                                  {university}
+                                  {flower}
                                 </CommandItem>
                               ))}
                               {isCustomValue && (
                                 <CommandItem
                                   value={`__add__${trimmedSearch}`}
                                   onSelect={() => {
-                                    form.setValue("university", trimmedSearch, { shouldValidate: true });
+                                    form.setValue("species", trimmedSearch, { shouldValidate: true });
                                     setSearchValue("");
                                     setOpen(false);
                                   }}
@@ -457,13 +460,35 @@ export default function LogPage() {
 
               <FormField
                 control={form.control}
+                name="photoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Photo URL (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://example.com/my-flower.jpg" {...field} />
+                    </FormControl>
+                    {field.value && /^https?:\/\//.test(field.value) && (
+                      <img
+                        src={field.value}
+                        alt="Flower preview"
+                        className="mt-2 w-full h-40 object-cover rounded-md border"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Notes (Optional)</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="e.g. Saw a Michigan hat at a coffee shop in Tokyo!"
+                        placeholder="e.g. A whole patch blooming along the creek trail!"
                         className="resize-none"
                         {...field}
                       />

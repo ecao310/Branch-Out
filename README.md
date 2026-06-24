@@ -1,15 +1,15 @@
 # Branch Out 
 
-A crowd-sourced map for spotting college gear in the wild. Log sightings of university sweatshirts, hats, and gear you spot out in the real world, and see where other schools are repping themselves on the map.
+A crowd-sourced map for spotting wildflowers in the wild. Log sightings of flowers you find out in the real world — with a photo and GPS location — and see where everything is blooming on the map.
 
 ---
 
 ## Features
 
-- **Map view** — See all sightings plotted on an interactive map
-- **Log a sighting** — Drop a pin where you spotted someone repping their school
+- **Map view** — See all flower sightings plotted on an interactive map
+- **Log a flower** — Drop a pin where you spotted a bloom, with an optional photo URL
 - **Recent activity** — Live feed of the latest sightings from all spotters
-- **Leaderboard** — See which universities have the most sightings and who's logged the most spots
+- **Leaderboard** — See which flowers are spotted most and who's logged the most finds
 
 ---
 
@@ -134,9 +134,10 @@ Hosted on [Supabase](https://supabase.com) (free tier). Schema is managed with D
 | Column | Type | Description |
 |---|---|---|
 | id | int | Auto-incrementing primary key |
-| university | text | Name of the university spotted |
+| species | text | Name of the flower spotted |
 | latitude | float | Latitude of the sighting |
 | longitude | float | Longitude of the sighting |
 | notes | text | Optional notes about the sighting |
+| photo_url | text | Optional URL of a photo of the flower |
 | spotter_name | text | Name of the person who logged it |
 | created_at | timestamptz | When the sighting was logged |

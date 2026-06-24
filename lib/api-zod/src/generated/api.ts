@@ -16,45 +16,47 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * Returns all university apparel sightings
+ * Returns all wildflower sightings
  * @summary List all sightings
  */
 export const ListSightingsQueryParams = zod.object({
-  university: zod.coerce
+  species: zod.coerce
     .string()
     .optional()
-    .describe("Filter by university name (case-insensitive partial match)"),
+    .describe("Filter by flower species (case-insensitive partial match)"),
 });
 
 export const ListSightingsResponseItem = zod.object({
   id: zod.number(),
-  university: zod.string(),
+  species: zod.string(),
   latitude: zod.number().nullish(),
   longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
+  photoUrl: zod.string().nullish(),
   spotterName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListSightingsResponse = zod.array(ListSightingsResponseItem);
 
 /**
- * Log a new university apparel sighting with GPS coordinates
+ * Log a new wildflower sighting with GPS coordinates
  * @summary Create a new sighting
  */
 export const CreateSightingBody = zod.object({
-  university: zod.string(),
+  species: zod.string(),
   latitude: zod.number().nullish(),
   longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
+  photoUrl: zod.string().nullish(),
   spotterName: zod.string().nullish(),
 });
 
 /**
- * Returns aggregated sighting counts per university
+ * Returns aggregated sighting counts per flower species
  * @summary Get sighting statistics
  */
 export const GetSightingStatsResponseItem = zod.object({
-  university: zod.string(),
+  species: zod.string(),
   count: zod.number(),
 });
 export const GetSightingStatsResponse = zod.array(GetSightingStatsResponseItem);
@@ -65,10 +67,11 @@ export const GetSightingStatsResponse = zod.array(GetSightingStatsResponseItem);
  */
 export const GetRecentSightingsResponseItem = zod.object({
   id: zod.number(),
-  university: zod.string(),
+  species: zod.string(),
   latitude: zod.number().nullish(),
   longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
+  photoUrl: zod.string().nullish(),
   spotterName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
@@ -85,10 +88,11 @@ export const GetSightingParams = zod.object({
 
 export const GetSightingResponse = zod.object({
   id: zod.number(),
-  university: zod.string(),
+  species: zod.string(),
   latitude: zod.number().nullish(),
   longitude: zod.number().nullish(),
   notes: zod.string().nullish(),
+  photoUrl: zod.string().nullish(),
   spotterName: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });

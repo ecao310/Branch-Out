@@ -30,24 +30,25 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ### Branch Out (`artifacts/branch-out`)
 
-A crowd-sourced university apparel sighting tracker.
+A crowd-sourced wildflower sighting tracker.
 
 **Features:**
-- Interactive Leaflet map showing all sightings as pins across the US
-- Filter sidebar to show pins for a specific university
-- "Log Sighting" button using HTML5 Geolocation API + university autocomplete
-- Stats/leaderboard page with sighting counts per university and recent activity feed
+- Interactive Leaflet map showing all flower sightings as pins
+- Filter by flower species
+- "Log a Flower" button using HTML5 Geolocation API + species autocomplete + optional photo URL
+- Stats/leaderboard page with sighting counts per flower species and recent activity feed
 - Dark/light mode toggle
 - Mobile-first design
 
 **Backend routes** (`artifacts/api-server/src/routes/sightings.ts`):
-- `GET /api/sightings` — list all (optional `?university=` filter)
+- `GET /api/sightings` — list all (optional `?species=` filter)
 - `POST /api/sightings` — create a new sighting
-- `GET /api/sightings/stats` — aggregated counts per university
+- `GET /api/sightings/stats` — aggregated counts per flower species
 - `GET /api/sightings/recent` — last 10 sightings
 - `GET /api/sightings/:id` — get one sighting
+- `GET /api/species` — list known flower species
 
 **DB schema** (`lib/db/src/schema/sightings.ts`):
-- `sightings` table: id, university, latitude, longitude, notes, created_at
+- `sightings` table: id, species, latitude, longitude, notes, photo_url, spotter_name, created_at
 
 **Important**: After any changes to `lib/api-spec/openapi.yaml`, run codegen and then manually fix `lib/api-zod/src/index.ts` to only export `./generated/api` (not `./generated/types` or `./generated/api.schemas` — those don't exist without the schemas config).

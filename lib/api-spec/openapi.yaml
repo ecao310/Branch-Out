@@ -11,7 +11,7 @@ tags:
   - name: health
     description: Health operations
   - name: sightings
-    description: University apparel sighting operations
+    description: Wildflower sighting operations
 paths:
   /healthz:
     get:
@@ -32,13 +32,13 @@ paths:
       operationId: listSightings
       tags: [sightings]
       summary: List all sightings
-      description: Returns all university apparel sightings
+      description: Returns all wildflower sightings
       parameters:
         - in: query
-          name: university
+          name: species
           schema:
             type: string
-          description: Filter by university name (case-insensitive partial match)
+          description: Filter by flower species (case-insensitive partial match)
       responses:
         "200":
           description: List of sightings
@@ -52,7 +52,7 @@ paths:
       operationId: createSighting
       tags: [sightings]
       summary: Create a new sighting
-      description: Log a new university apparel sighting with GPS coordinates
+      description: Log a new wildflower sighting with GPS coordinates
       requestBody:
         required: true
         content:
@@ -78,7 +78,7 @@ paths:
       operationId: getSightingStats
       tags: [sightings]
       summary: Get sighting statistics
-      description: Returns aggregated sighting counts per university
+      description: Returns aggregated sighting counts per flower species
       responses:
         "200":
           description: Sighting stats
@@ -87,7 +87,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/UniversityStat"
+                  $ref: "#/components/schemas/SpeciesStat"
 
   /sightings/recent:
     get:
@@ -145,7 +145,7 @@ components:
       properties:
         id:
           type: integer
-        university:
+        species:
           type: string
         latitude:
           type: number
@@ -156,6 +156,9 @@ components:
           format: float
           nullable: true
         notes:
+          type: string
+          nullable: true
+        photoUrl:
           type: string
           nullable: true
         spotterName:
@@ -166,13 +169,13 @@ components:
           format: date-time
       required:
         - id
-        - university
+        - species
         - createdAt
 
     CreateSightingBody:
       type: object
       properties:
-        university:
+        species:
           type: string
         latitude:
           type: number
@@ -185,21 +188,24 @@ components:
         notes:
           type: string
           nullable: true
+        photoUrl:
+          type: string
+          nullable: true
         spotterName:
           type: string
           nullable: true
       required:
-        - university
+        - species
 
-    UniversityStat:
+    SpeciesStat:
       type: object
       properties:
-        university:
+        species:
           type: string
         count:
           type: integer
       required:
-        - university
+        - species
         - count
 
     ErrorResponse:

@@ -44,7 +44,7 @@ export default function StatsPage() {
 
   // batching state for categories
   const BATCH = 10;
-  const [universitiesVisible, setUniversitiesVisible] = React.useState(BATCH);
+  const [speciesVisible, setSpeciesVisible] = React.useState(BATCH);
   const [spottersVisible, setSpottersVisible] = React.useState(BATCH);
 
   // Leaderboard calculations
@@ -153,7 +153,7 @@ export default function StatsPage() {
 
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Stats</h1>
-          <p className="text-muted-foreground mt-2">Which university has the widest reach?</p>
+          <p className="text-muted-foreground mt-2">Which wildflowers are blooming most?</p>
         </div>
 
         {/* Top Leaderboard quick links */}
@@ -218,7 +218,7 @@ export default function StatsPage() {
           <div className="bg-card border rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
               <Trophy className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-bold">Top Universities</h2>
+              <h2 className="text-xl font-bold">Top Flowers</h2>
             </div>
 
             <div className="space-y-4">
@@ -232,14 +232,14 @@ export default function StatsPage() {
                 </div>
               ) : (
                 <>
-                  {stats.slice(0, universitiesVisible).map((stat) => {
-                    const rank = stats.findIndex(s => s.university === stat.university) + 1;
+                  {(stats ?? []).slice(0, speciesVisible).map((stat) => {
+                    const rank = (stats ?? []).findIndex(s => s.species === stat.species) + 1;
                     return (
-                      <div key={stat.university} className="relative">
+                      <div key={stat.species} className="relative">
                         <div className="flex justify-between items-center mb-1 text-sm font-medium z-10 relative px-2">
                           <span className="flex items-center gap-2">
                             <span className="text-muted-foreground w-4">{rank}.</span>
-                            {stat.university}
+                            {stat.species}
                           </span>
                           <span>{stat.count}</span>
                         </div>
@@ -252,9 +252,9 @@ export default function StatsPage() {
                       </div>
                     );
                   })}
-                  {stats.length > universitiesVisible && (
+                  {(stats?.length ?? 0) > speciesVisible && (
                     <div className="mt-4 flex justify-center">
-                      <button onClick={() => setUniversitiesVisible(c => Math.min(stats.length, c + BATCH))} className="px-3 py-1 rounded-md bg-primary text-white">See more</button>
+                      <button onClick={() => setSpeciesVisible(c => Math.min(stats?.length ?? 0, c + BATCH))} className="px-3 py-1 rounded-md bg-primary text-white">See more</button>
                     </div>
                   )}
                 </>

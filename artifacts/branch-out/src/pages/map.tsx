@@ -4,53 +4,58 @@ import { useListSightings, getListSightingsQueryKey } from "@workspace/api-clien
 import { useQueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 
-// School colors map - official colors for common universities
-const SCHOOL_COLORS: Record<string, { bg: string; text: string }> = {
-  "Stanford":              { bg: "#8C1515", text: "#ffffff" },
-  "California (Berkeley)": { bg: "#003262", text: "#FDB515" },
-  "UCLA":                  { bg: "#2D68C4", text: "#F2A900" },
-  "Michigan":              { bg: "#00274C", text: "#FFCB05" },
-  "USC":                   { bg: "#990000", text: "#FFC72C" },
-  "Cornell":               { bg: "#B31B1B", text: "#ffffff" },
-  "Purdue":                { bg: "#CEB888", text: "#000000" },
-  "UCSF":                  { bg: "#052049", text: "#9ECEEE" },
-  "UC Irvine":             { bg: "#0064A4", text: "#FFD200" },
-  "UCSD":                  { bg: "#00629B", text: "#C69214" },
-  "Arizona State":         { bg: "#8C1D40", text: "#FFC627" },
-  "Arizona":               { bg: "#AB0520", text: "#0C234B" },
-  "North Carolina":        { bg: "#4B9CD3", text: "#ffffff" },
-  "Duke":                  { bg: "#003087", text: "#ffffff" },
-  "Notre Dame":            { bg: "#0C2340", text: "#AE9142" },
-  "Ohio State":            { bg: "#BA0C2F", text: "#666666" },
-  "Texas":                 { bg: "#BF5700", text: "#ffffff" },
-  "Florida":               { bg: "#0021A5", text: "#FA4616" },
-  "Georgia":               { bg: "#BA0C2F", text: "#000000" },
-  "Alabama":               { bg: "#9E1B32", text: "#ffffff" },
-  "LSU":                   { bg: "#461D7C", text: "#FDD023" },
-  "Penn State":            { bg: "#041E42", text: "#ffffff" },
-  "Wisconsin":             { bg: "#C5050C", text: "#ffffff" },
-  "Minnesota":             { bg: "#7A0019", text: "#FFCC33" },
-  "Iowa":                  { bg: "#FFCD00", text: "#000000" },
-  "Nebraska":              { bg: "#E41C38", text: "#ffffff" },
-  "Louisville":            { bg: "#AD0000", text: "#ffffff" },
-  "UMass Amherst":         { bg: "#881C1C", text: "#ffffff" },
-  "West Virginia":         { bg: "#002855", text: "#EAAA00" },
+// Flower colors map - representative bloom colors for common wildflowers
+const FLOWER_COLORS: Record<string, { bg: string; text: string }> = {
+  "Black-eyed Susan":  { bg: "#F2B705", text: "#3a2d00" },
+  "Bluebell":          { bg: "#5B6EE1", text: "#ffffff" },
+  "Bluebonnet":        { bg: "#2D3A8C", text: "#ffffff" },
+  "Buttercup":         { bg: "#F7D002", text: "#3a2d00" },
+  "California Poppy":  { bg: "#F28C0F", text: "#ffffff" },
+  "Cardinal Flower":   { bg: "#C1121F", text: "#ffffff" },
+  "Chicory":           { bg: "#7B9AE0", text: "#ffffff" },
+  "Columbine":         { bg: "#6A4C93", text: "#ffffff" },
+  "Coneflower":        { bg: "#C45BAA", text: "#ffffff" },
+  "Cornflower":        { bg: "#3D5ADF", text: "#ffffff" },
+  "Cosmos":            { bg: "#E26DA5", text: "#ffffff" },
+  "Dandelion":         { bg: "#FFD500", text: "#3a2d00" },
+  "Evening Primrose":  { bg: "#F6E05E", text: "#3a2d00" },
+  "Fireweed":          { bg: "#D6336C", text: "#ffffff" },
+  "Forget-me-not":     { bg: "#7BAFD4", text: "#ffffff" },
+  "Foxglove":          { bg: "#B5179E", text: "#ffffff" },
+  "Goldenrod":         { bg: "#E8A800", text: "#3a2d00" },
+  "Indian Paintbrush": { bg: "#E63916", text: "#ffffff" },
+  "Iris":              { bg: "#5F4B8B", text: "#ffffff" },
+  "Lupine":            { bg: "#5C6BC0", text: "#ffffff" },
+  "Marigold":          { bg: "#F77F00", text: "#ffffff" },
+  "Milkweed":          { bg: "#E59BB5", text: "#3a2d00" },
+  "Morning Glory":     { bg: "#6A5ACD", text: "#ffffff" },
+  "Phlox":             { bg: "#D988C4", text: "#ffffff" },
+  "Poppy":             { bg: "#E03131", text: "#ffffff" },
+  "Primrose":          { bg: "#F4C95D", text: "#3a2d00" },
+  "Queen Anne's Lace": { bg: "#F1F1E6", text: "#3a2d00" },
+  "Sunflower":         { bg: "#F4B400", text: "#3a2d00" },
+  "Trillium":          { bg: "#F5F5F5", text: "#3a2d00" },
+  "Violet":            { bg: "#7048E8", text: "#ffffff" },
+  "Wild Aster":        { bg: "#9775FA", text: "#ffffff" },
+  "Wild Bergamot":     { bg: "#B36AE2", text: "#ffffff" },
+  "Wild Geranium":     { bg: "#D6699E", text: "#ffffff" },
+  "Wild Rose":         { bg: "#F06595", text: "#ffffff" },
+  "Yarrow":            { bg: "#FBEEC1", text: "#3a2d00" },
 };
 
-function getSchoolStyle(university: string): { bg: string; text: string } {
-  if (SCHOOL_COLORS[university]) return SCHOOL_COLORS[university];
-  // Generate a consistent color from the university name
+function getFlowerStyle(species: string): { bg: string; text: string } {
+  if (FLOWER_COLORS[species]) return FLOWER_COLORS[species];
+  // Generate a consistent color from the species name
   let hash = 0;
-  for (let i = 0; i < university.length; i++) {
-    hash = university.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < species.length; i++) {
+    hash = species.charCodeAt(i) + ((hash << 5) - hash);
   }
   const hue = Math.abs(hash) % 360;
-  return { bg: `hsl(${hue}, 65%, 35%)`, text: "#ffffff" };
+  return { bg: `hsl(${hue}, 70%, 50%)`, text: "#ffffff" };
 }
 
-function createSchoolIcon(university: string): L.DivIcon {
-  const letter = university.trim()[0]?.toUpperCase() ?? "?";
-  const { bg, text } = getSchoolStyle(university);
+function createFlowerIcon(species: string): L.DivIcon {
+  const { bg, text } = getFlowerStyle(species);
   return L.divIcon({
     className: "",
     html: `
@@ -64,19 +69,39 @@ function createSchoolIcon(university: string): L.DivIcon {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 800;
-        font-size: 13px;
-        font-family: Georgia, serif;
+        font-size: 15px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-        border: 2px solid rgba(255,255,255,0.3);
+        border: 2px solid rgba(255,255,255,0.6);
       ">
-        <span style="transform: rotate(45deg); display: block;">${letter}</span>
+        <span style="transform: rotate(45deg); display: block;">&#127802;</span>
       </div>
     `,
     iconSize: [32, 32],
     iconAnchor: [16, 32],
     popupAnchor: [0, -34],
   });
+}
+
+function popupHtml(s: { species: string; createdAt: string | Date; spotterName?: string | null; notes?: string | null; photoUrl?: string | null }): string {
+  const { bg, text } = getFlowerStyle(s.species);
+  const date = new Date(s.createdAt).toLocaleDateString();
+  return `
+    <div style="font-family: Georgia, serif; min-width: 160px;">
+      <div style="
+        background: ${bg};
+        color: ${text};
+        margin: -13px -20px 10px -20px;
+        padding: 10px 16px;
+        border-radius: 4px 4px 0 0;
+        font-weight: bold;
+        font-size: 15px;
+      ">${s.species}</div>
+      ${s.photoUrl ? `<img src="${s.photoUrl}" alt="${s.species}" style="width:100%;height:110px;object-fit:cover;border-radius:4px;margin-bottom:8px;" onerror="this.style.display='none'" />` : ''}
+      <p style="margin: 0; font-size: 12px; color: #888;">Spotted ${date}</p>
+      ${s.spotterName ? `<p style="margin: 6px 0 0; font-size: 13px;">by <strong>${s.spotterName}</strong></p>` : ''}
+      ${s.notes ? `<p style="margin: 6px 0 0; font-size: 13px; font-style: italic;">"${s.notes}"</p>` : ''}
+    </div>
+  `;
 }
 
 export default function MapPage() {
@@ -92,7 +117,6 @@ export default function MapPage() {
       const params = new URLSearchParams(window.location.search);
       const id = Number(params.get("selected"));
       if (Number.isInteger(id) && id > 0) {
-        console.log("🔄 Invalidating sightings query for selectedSightingId:", id);
         queryClient.invalidateQueries({ queryKey: getListSightingsQueryKey({}) });
       }
     };
@@ -154,83 +178,39 @@ export default function MapPage() {
 
     // Recalculate selectedSightingId from current URL
     const params = new URLSearchParams(window.location.search);
-    const selectedId = Number(params.get("selected"));
-    const currentSelectedSightingId = Number.isInteger(selectedId) && selectedId > 0 ? selectedId : undefined;
-
-    console.log("📍 Creating markers. Total sightings:", sightings.length);
-    console.log("🎯 Looking for selectedSightingId:", currentSelectedSightingId);
+    const selectedIdNum = Number(params.get("selected"));
+    const currentSelectedSightingId = Number.isInteger(selectedIdNum) && selectedIdNum > 0 ? selectedIdNum : undefined;
 
     sightings.forEach(sighting => {
       if (sighting.latitude == null || sighting.longitude == null) return;
-      const date = new Date(sighting.createdAt).toLocaleDateString();
-      const { bg, text } = getSchoolStyle(sighting.university);
       const marker = L.marker([sighting.latitude, sighting.longitude], {
-        icon: createSchoolIcon(sighting.university)
-      }).bindPopup(`
-        <div style="font-family: Georgia, serif; min-width: 160px;">
-          <div style="
-            background: ${bg};
-            color: ${text};
-            margin: -13px -20px 10px -20px;
-            padding: 10px 16px;
-            border-radius: 4px 4px 0 0;
-            font-weight: bold;
-            font-size: 15px;
-          ">${sighting.university}</div>
-          <p style="margin: 0; font-size: 12px; color: #888;">Spotted ${date}</p>
-          ${sighting.spotterName ? `<p style="margin: 6px 0 0; font-size: 13px;">by <strong>${sighting.spotterName}</strong></p>` : ''}
-          ${sighting.notes ? `<p style="margin: 6px 0 0; font-size: 13px; font-style: italic;">"${sighting.notes}"</p>` : ''}
-        </div>
-      `);
+        icon: createFlowerIcon(sighting.species)
+      }).bindPopup(popupHtml(sighting));
       markerById[sighting.id] = marker;
       markers.addLayer(marker);
     });
 
     markerByIdRef.current = markerById;
-    console.log("✅ Marker map created. Sighting IDs available:", Object.keys(markerById).map(Number));
 
     // Check if we have a separately fetched selected sighting
-    if (selectedId && selectedSighting && selectedSighting.latitude != null && selectedSighting.longitude != null) {
-      console.log("🎯 Found separately fetched selected sighting:", selectedSighting.id);
-      const { bg, text } = getSchoolStyle(selectedSighting.university);
+    if (selectedIdNum && selectedSighting && selectedSighting.latitude != null && selectedSighting.longitude != null) {
       const selectedMarker = L.marker([selectedSighting.latitude, selectedSighting.longitude], {
-        icon: createSchoolIcon(selectedSighting.university)
-      }).bindPopup(`
-        <div style="font-family: Georgia, serif; min-width: 160px;">
-          <div style="
-            background: ${bg};
-            color: ${text};
-            margin: -13px -20px 10px -20px;
-            padding: 10px 16px;
-            border-radius: 4px 4px 0 0;
-            font-weight: bold;
-            font-size: 15px;
-          ">${selectedSighting.university}</div>
-          <p style="margin: 0; font-size: 12px; color: #888;">Spotted ${new Date(selectedSighting.createdAt).toLocaleDateString()}</p>
-          ${selectedSighting.spotterName ? `<p style="margin: 6px 0 0; font-size: 13px;">by <strong>${selectedSighting.spotterName}</strong></p>` : ''}
-          ${selectedSighting.notes ? `<p style="margin: 6px 0 0; font-size: 13px; font-style: italic;">"${selectedSighting.notes}"</p>` : ''}
-        </div>
-      `);
+        icon: createFlowerIcon(selectedSighting.species)
+      }).bindPopup(popupHtml(selectedSighting));
       markerByIdRef.current[selectedSighting.id] = selectedMarker;
       markers.addLayer(selectedMarker);
       map.setView([selectedSighting.latitude, selectedSighting.longitude], 17);
       setTimeout(() => {
         selectedMarker.openPopup();
-        console.log("📬 Popup opened for fetched sighting");
       }, 100);
     } else if (currentSelectedSightingId && markerById[currentSelectedSightingId]) {
-      console.log("🎯 Found selected marker! Zooming and opening popup.");
       const selectedMarker = markerById[currentSelectedSightingId];
       const latLng = selectedMarker.getLatLng();
-      console.log("📌 Marker location:", latLng);
       map.setView(latLng, 17);
       // Use a small timeout to ensure the popup renders properly
       setTimeout(() => {
         selectedMarker.openPopup();
-        console.log("📬 Popup opened");
       }, 100);
-    } else {
-      console.log("❌ Selected marker NOT found. selectedSightingId:", currentSelectedSightingId, "Available IDs:", Object.keys(markerById));
     }
   }, [sightings, selectedSighting]);
 

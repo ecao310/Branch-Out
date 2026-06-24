@@ -11,32 +11,26 @@ import {
   GetRecentSightingsResponse,
 } from "@workspace/api-zod";
 
-const STATIC_UNIVERSITIES = [
-  "Alabama", "Arizona", "Arizona State", "Arkansas", "Auburn", "Baylor",
-  "Boston College", "Boston University", "BYU", "California (Berkeley)",
-  "Cincinnati", "Clemson", "Colorado", "Connecticut", "Duke", "Florida",
-  "Florida State", "Georgia", "Georgia Tech", "Houston", "Illinois",
-  "Indiana", "Iowa", "Iowa State", "Kansas", "Kansas State", "Kentucky",
-  "LSU", "Maryland", "Miami", "Michigan", "Michigan State", "Minnesota",
-  "Mississippi State", "Missouri", "Nebraska", "North Carolina", "NC State",
-  "Northwestern", "Notre Dame", "Ohio State", "Oklahoma", "Oklahoma State",
-  "Ole Miss", "Oregon", "Oregon State", "Penn State", "Pittsburgh", "Purdue",
-  "Rutgers", "South Carolina", "Stanford", "Syracuse", "TCU", "Tennessee",
-  "Texas", "Texas A&M", "Texas Tech", "UCLA", "USC", "Utah", "Vanderbilt",
-  "Virginia", "Virginia Tech", "Wake Forest", "Washington", "Washington State",
-  "UMass Amherst", "West Virginia", "Wisconsin",
+const STATIC_SPECIES = [
+  "Black-eyed Susan", "Bluebell", "Bluebonnet", "Buttercup", "California Poppy",
+  "Cardinal Flower", "Chicory", "Columbine", "Coneflower", "Cornflower",
+  "Cosmos", "Dandelion", "Evening Primrose", "Fireweed", "Forget-me-not",
+  "Foxglove", "Goldenrod", "Indian Paintbrush", "Iris", "Joe-Pye Weed",
+  "Lupine", "Marigold", "Milkweed", "Morning Glory", "Phlox", "Poppy",
+  "Primrose", "Queen Anne's Lace", "Sunflower", "Trillium", "Violet",
+  "Wild Aster", "Wild Bergamot", "Wild Geranium", "Wild Rose", "Yarrow",
 ];
 
 const router: IRouter = Router();
 
-router.get("/universities", async (_req, res): Promise<void> => {
+router.get("/species", async (_req, res): Promise<void> => {
   const rows = await db
-    .selectDistinct({ university: sightingsTable.university })
+    .selectDistinct({ species: sightingsTable.species })
     .from(sightingsTable)
-    .orderBy(asc(sightingsTable.university));
+    .orderBy(asc(sightingsTable.species));
 
-  const fromDb = rows.map((r) => r.university);
-  const merged = Array.from(new Set([...STATIC_UNIVERSITIES, ...fromDb])).sort((a, b) =>
+  const fromDb = rows.map((r) => r.species);
+  const merged = Array.from(new Set([...STATIC_SPECIES, ...fromDb])).sort((a, b) =>
     a.localeCompare(b)
   );
   res.json(merged);
@@ -49,13 +43,13 @@ router.get("/sightings", async (req, res): Promise<void> => {
     return;
   }
 
-  const { university } = parsed.data;
+  const { species } = parsed.data;
 
-  const rows = university
+  const rows = species
     ? await db
         .select()
         .from(sightingsTable)
-        .where(ilike(sightingsTable.university, `%${university}%`))
+        .where(ilike(sightingsTable.species, `%${species}%`))
         .orderBy(desc(sightingsTable.createdAt))
     : await db
         .select()
@@ -76,10 +70,11 @@ router.post("/sightings", async (req, res): Promise<void> => {
     const [sighting] = await db
       .insert(sightingsTable)
       .values({
-        university: parsed.data.university,
+        species: parsed.data.species,
         latitude: parsed.data.latitude ?? null,
         longitude: parsed.data.longitude ?? null,
         notes: parsed.data.notes ?? null,
+        photoUrl: parsed.data.photoUrl ?? null,
         spotterName: parsed.data.spotterName ?? null,
       })
       .returning();
@@ -94,11 +89,11 @@ router.post("/sightings", async (req, res): Promise<void> => {
 router.get("/sightings/stats", async (_req, res): Promise<void> => {
   const stats = await db
     .select({
-      university: sightingsTable.university,
+      species: sightingsTable.species,
       count: sql<number>`cast(count(*) as int)`,
     })
     .from(sightingsTable)
-    .groupBy(sightingsTable.university)
+    .groupBy(sightingsTable.species)
     .orderBy(desc(sql`count(*)`));
 
   res.json(GetSightingStatsResponse.parse(stats));

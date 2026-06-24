@@ -34,7 +34,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <nav className="h-16 border-t bg-card flex items-center justify-center gap-6 px-2 sm:px-6 shrink-0 pb-safe">
         <NavItem href="/map" icon={<Map className="h-6 w-6" />} label="Map" active={location === "/map"} />
-        <NavItem href="/" icon={<PlusCircle className="h-6 w-6" />} label="Add Sighting" active={location === "/"} />
+        <NavItem href="/" icon={<PlusCircle className="h-6 w-6" />} label="Log Flower" active={location === "/"} />
         <NavItem href="/stats" icon={<BarChart3 className="h-6 w-6" />} label="Stats" active={location === "/stats"} />
         <NavItem href="/recent" icon={<Clock className="h-6 w-6" />} label="Recent" active={location === "/recent"} />
       </nav>

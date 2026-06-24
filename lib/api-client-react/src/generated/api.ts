@@ -22,7 +22,7 @@ import type {
   HealthStatus,
   ListSightingsParams,
   Sighting,
-  UniversityStat,
+  SpeciesStat,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -111,7 +111,7 @@ export function useHealthCheck<
 }
 
 /**
- * Returns all university apparel sightings
+ * Returns all wildflower sightings
  * @summary List all sightings
  */
 export const getListSightingsUrl = (params?: ListSightingsParams) => {
@@ -206,7 +206,7 @@ export function useListSightings<
 }
 
 /**
- * Log a new university apparel sighting with GPS coordinates
+ * Log a new wildflower sighting with GPS coordinates
  * @summary Create a new sighting
  */
 export const getCreateSightingUrl = () => {
@@ -293,7 +293,7 @@ export const useCreateSighting = <
 };
 
 /**
- * Returns aggregated sighting counts per university
+ * Returns aggregated sighting counts per flower species
  * @summary Get sighting statistics
  */
 export const getGetSightingStatsUrl = () => {
@@ -302,8 +302,8 @@ export const getGetSightingStatsUrl = () => {
 
 export const getSightingStats = async (
   options?: RequestInit,
-): Promise<UniversityStat[]> => {
-  return customFetch<UniversityStat[]>(getGetSightingStatsUrl(), {
+): Promise<SpeciesStat[]> => {
+  return customFetch<SpeciesStat[]>(getGetSightingStatsUrl(), {
     ...options,
     method: "GET",
   });
