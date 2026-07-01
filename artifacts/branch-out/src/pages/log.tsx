@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Navigation, Loader2, Check, ChevronsUpDown, X } from "lucide-react";
+import { MapPin, Navigation, Loader2, Check, ChevronsUpDown, X, Camera } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -200,9 +200,36 @@ export default function LogPage() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const [open, setOpen] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const { data: species = STATIC_SPECIES } = useSpecies();
   const createSighting = useCreateSighting();
+
+  // Capture a photo from the device camera (or file picker on desktop). The
+  // image is held in state for preview only — it is not uploaded, saved, or
+  // identified yet. `photoFile` is the seam for a future "Identify with AI"
+  // step (send the image to the server and auto-fill the species field).
+  const handlePhotoCapture = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset so picking the same file again still fires onChange.
+    e.target.value = "";
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
+  // Free the object URL when the preview changes or the component unmounts.
+  useEffect(() => {
+    if (!photoPreview) return;
+    return () => URL.revokeObjectURL(photoPreview);
+  }, [photoPreview]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -315,6 +342,56 @@ export default function LogPage() {
                   </FormItem>
                 )}
               />
+
+              {/* Photo capture — opens the device camera on mobile (rear-facing
+                  via capture="environment") or a file picker on desktop.
+                  Preview-only for now; not uploaded, saved, or identified yet. */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium leading-none">Photo</label>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoCapture}
+                />
+                {photoPreview ? (
+                  <div className="relative">
+                    <img
+                      src={photoPreview}
+                      alt="Captured flower"
+                      className="w-full h-48 object-cover rounded-md border"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm text-muted-foreground hover:text-destructive"
+                      onClick={removePhoto}
+                      aria-label="Remove photo"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    {/* AI seam: an "Identify with AI" button will go here later.
+                        It will send `photoFile` to a server endpoint and call
+                        form.setValue("species", result) with the response. */}
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="w-full flex gap-2 items-center justify-center"
+                  >
+                    <Camera className="h-4 w-4" />
+                    Take Photo
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Preview only for now — saving and AI identification are coming soon.
+                </p>
+              </div>
 
               <FormField
                 control={form.control}
