@@ -203,14 +203,42 @@ export default function LogPage() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
 
   const { data: species = STATIC_SPECIES } = useSpecies();
   const createSighting = useCreateSighting();
 
-  // Capture a photo from the device camera (or file picker on desktop). The
-  // image is held in state for preview only — it is not uploaded, saved, or
-  // identified yet. `photoFile` is the seam for a future "Identify with AI"
-  // step (send the image to the server and auto-fill the species field).
+  // Upload the captured photo to the server as soon as it's picked, so the
+  // sighting form has a real URL ready by the time the user hits Confirm.
+  // `photoFile` is also the seam for a future "Identify with AI" step (send
+  // the image to the server and auto-fill the species field).
+  const uploadPhoto = async (file: File) => {
+    setIsUploadingPhoto(true);
+    setUploadedPhotoUrl(null);
+    try {
+      const formData = new FormData();
+      formData.append("photo", file);
+      const res = await fetch("/api/uploads", { method: "POST", body: formData });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || "Failed to upload photo");
+      }
+      const body = await res.json();
+      setUploadedPhotoUrl(body.url);
+    } catch (err) {
+      toast({
+        title: "Photo upload failed",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+      setPhotoFile(null);
+      setPhotoPreview(null);
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
   const handlePhotoCapture = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     // Reset so picking the same file again still fires onChange.
@@ -218,11 +246,13 @@ export default function LogPage() {
     if (!file) return;
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
+    void uploadPhoto(file);
   };
 
   const removePhoto = () => {
     setPhotoFile(null);
     setPhotoPreview(null);
+    setUploadedPhotoUrl(null);
   };
 
   // Free the object URL when the preview changes or the component unmounts.
@@ -282,7 +312,7 @@ export default function LogPage() {
           latitude: coords?.lat ?? null,
           longitude: coords?.lng ?? null,
           notes: data.notes || null,
-          photoUrl: data.photoUrl?.trim() || null,
+          photoUrl: uploadedPhotoUrl ?? (data.photoUrl?.trim() || null),
           spotterName: name,
         },
       },
@@ -344,10 +374,10 @@ export default function LogPage() {
               />
 
               {/* Photo capture — opens the device camera on mobile (rear-facing
-                  via capture="environment") or a file picker on desktop.
-                  Preview-only for now; not uploaded, saved, or identified yet. */}
+                  via capture="environment") or a file picker on desktop. The
+                  photo uploads immediately on capture so a URL is ready by submit. */}
               <div className="space-y-3">
-                <label className="text-sm font-medium leading-none">Photo</label>
+                <label className="text-sm font-medium leading-none">Photo (Optional)</label>
                 <input
                   ref={cameraInputRef}
                   type="file"
@@ -361,14 +391,23 @@ export default function LogPage() {
                     <img
                       src={photoPreview}
                       alt="Captured flower"
-                      className="w-full h-48 object-cover rounded-md border"
+                      className={cn(
+                        "w-full h-48 object-cover rounded-md border",
+                        isUploadingPhoto && "opacity-50"
+                      )}
                     />
+                    {isUploadingPhoto && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-white drop-shadow" />
+                      </div>
+                    )}
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm text-muted-foreground hover:text-destructive"
                       onClick={removePhoto}
+                      disabled={isUploadingPhoto}
                       aria-label="Remove photo"
                     >
                       <X className="h-4 w-4" />
@@ -389,7 +428,7 @@ export default function LogPage() {
                   </Button>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Preview only for now — saving and AI identification are coming soon.
+                  AI-powered species identification from your photo is coming soon.
                 </p>
               </div>
 
@@ -535,27 +574,29 @@ export default function LogPage() {
                 </div>
               </div>
 
-              <FormField
-                control={form.control}
-                name="photoUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Photo URL (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/my-flower.jpg" {...field} />
-                    </FormControl>
-                    {field.value && /^https?:\/\//.test(field.value) && (
-                      <img
-                        src={field.value}
-                        alt="Flower preview"
-                        className="mt-2 w-full h-40 object-cover rounded-md border"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                      />
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {!photoPreview && (
+                <FormField
+                  control={form.control}
+                  name="photoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Photo URL (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com/my-flower.jpg" {...field} />
+                      </FormControl>
+                      {field.value && /^https?:\/\//.test(field.value) && (
+                        <img
+                          src={field.value}
+                          alt="Flower preview"
+                          className="mt-2 w-full h-40 object-cover rounded-md border"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
@@ -579,10 +620,12 @@ export default function LogPage() {
                 type="submit"
                 className="w-full font-bold"
                 size="lg"
-                disabled={createSighting.isPending}
+                disabled={createSighting.isPending || isUploadingPhoto}
               >
-                {createSighting.isPending ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-                {createSighting.isPending ? "Uploading..." : "Confirm"}
+                {createSighting.isPending || isUploadingPhoto ? (
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                ) : null}
+                {isUploadingPhoto ? "Uploading photo..." : createSighting.isPending ? "Saving..." : "Confirm"}
               </Button>
             </form>
           </Form>
