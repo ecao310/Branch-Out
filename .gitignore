@@ -51,3 +51,7 @@ Thumbs.db
 artifacts/campus-spotter/.env
 ecosystem.config.cjs
 .claude/
+
+# User-uploaded sighting photos (local disk storage)
+artifacts/api-server/uploads/*
+!artifacts/api-server/uploads/.gitkeep
