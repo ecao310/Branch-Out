@@ -156,7 +156,7 @@ export default function MapPage() {
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
-    const map = L.map(mapRef.current).setView([37.7749, -122.4194], 12);
+    const map = L.map(mapRef.current).setView([42.3736, -71.1097], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
